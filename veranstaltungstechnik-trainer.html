@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VT-Trainer – Lernen für Veranstaltungstechnik</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1c2233; --panel:#262e42; --panel2:#2f3850; --line:#3d4761;
+  --text:#eef0f5; --muted:#9aa3b8; --amber:#f5b33f; --amber-dark:#c98a1c;
+  --ok:#5fd08a; --bad:#ef6b5a; --blue:#6fb8e6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:Barlow,system-ui,sans-serif;font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.big{font-family:"Barlow Condensed",Barlow,system-ui,sans-serif;font-weight:700;letter-spacing:.01em}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.app{max-width:640px;margin:0 auto;padding:16px 14px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 0 14px}
+header h1{font-size:30px;line-height:1}
+header h1 span{color:var(--amber)}
+header .sub{color:var(--muted);font-size:14px}
+.screen{display:none}.screen.active{display:block}
+
+/* Startseite */
+.modes{display:grid;gap:10px;margin-top:10px}
+.mode{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:12px;transition:border-color .15s}
+.mode:hover,.mode:active{border-color:var(--amber)}
+.mode h2{font-size:24px;line-height:1.05}
+.mode p{color:var(--muted);font-size:14px;margin-top:3px}
+.mode .n{font-family:"Barlow Condensed";font-size:26px;color:var(--amber);white-space:nowrap}
+.cats{margin-top:22px}
+.cats h3{font-size:20px;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:14px;color:var(--muted);background:var(--panel)}
+.chip.on{background:var(--amber);color:#1c2233;border-color:var(--amber);font-weight:600}
+.chip small{opacity:.7;margin-left:4px}
+.stats{margin-top:22px;background:var(--panel);border-radius:12px;padding:14px 16px;border:1px solid var(--line)}
+.stats h3{font-size:20px;margin-bottom:8px}
+.statrow{display:flex;align-items:center;gap:10px;font-size:14px;padding:5px 0;color:var(--muted)}
+.statrow b{color:var(--text);min-width:120px;font-weight:500}
+.bar{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:4px}
+.statrow .pct{min-width:42px;text-align:right}
+.note{color:var(--muted);font-size:13px;margin-top:14px;line-height:1.4}
+.linkbtn{color:var(--blue);text-decoration:underline;font-size:13px}
+
+/* Quiz */
+.topbar{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted);margin-bottom:10px}
+.topbar b{color:var(--text);font-weight:500}
+.fader{height:6px;background:var(--panel2);border-radius:3px;margin-bottom:18px;overflow:hidden}
+.fader i{display:block;height:100%;background:var(--amber);transition:width .25s}
+.cat{font-size:13px;color:var(--amber);font-weight:600;margin-bottom:6px}
+.q{font-size:22px;line-height:1.3;font-weight:600;margin-bottom:18px}
+.answers{display:grid;gap:9px}
+.ans{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;text-align:left;font-size:16.5px;line-height:1.35;transition:background .12s,border-color .12s}
+.ans:hover{border-color:var(--muted)}
+.ans.ok{background:rgba(95,208,138,.16);border-color:var(--ok)}
+.ans.bad{background:rgba(239,107,90,.16);border-color:var(--bad)}
+.ans:disabled{cursor:default}
+.expl{margin-top:16px;padding:14px;border-radius:10px;background:var(--panel2);font-size:15px;line-height:1.45;border-left:3px solid var(--amber)}
+.expl.ok{border-left-color:var(--ok)}.expl.bad{border-left-color:var(--bad)}
+.expl b{display:block;margin-bottom:4px}
+.actions{display:flex;gap:10px;margin-top:16px}
+.btn{background:var(--amber);color:#1c2233;font-weight:600;border-radius:10px;padding:12px 18px;font-size:16px;flex:1;transition:background .12s}
+.btn:hover{background:var(--amber-dark)}
+.btn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line);flex:0 0 auto}
+.btn.ghost:hover{background:var(--panel2)}
+.timer{font-variant-numeric:tabular-nums}
+.timer.low{color:var(--bad);font-weight:600}
+
+/* Ergebnis */
+.result{text-align:center;padding:24px 0}
+.result .big{font-size:72px;line-height:1;color:var(--amber)}
+.result p{color:var(--muted);margin-top:6px}
+.result .grade{font-size:26px;margin-top:10px}
+.review{margin-top:22px;text-align:left}
+.review h3{font-size:20px;margin-bottom:8px}
+.rv{background:var(--panel);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:14.5px;border-left:3px solid var(--bad)}
+.rv .rq{font-weight:600;margin-bottom:4px}
+.rv .ra{color:var(--muted)}.rv .ra b{color:var(--ok);font-weight:500}
+
+/* Karteikarten */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 20px;min-height:220px;display:flex;flex-direction:column;justify-content:center;text-align:center;cursor:pointer}
+.card .term{font-family:"Barlow Condensed";font-size:34px;line-height:1.1}
+.card .def{font-size:16.5px;line-height:1.45;margin-top:6px}
+.card .hint{color:var(--muted);font-size:13px;margin-top:18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>VT-<span>Trainer</span></h1>
+  <div class="sub" id="poolInfo"></div>
+</header>
+
+<!-- START -->
+<section class="screen active" id="s-home">
+  <div class="modes">
+    <button class="mode" onclick="startPractice()">
+      <div><h2>Üben</h2><p>Endlos, sofortiges Feedback, nur die gewählten Bereiche</p></div><div class="n" id="nPractice"></div>
+    </button>
+    <button class="mode" onclick="startExam()">
+      <div><h2>Prüfungssimulation</h2><p>40 gemischte Fragen, 60 Minuten, Auswertung wie bei der IHK</p></div><div class="n">40</div>
+    </button>
+    <button class="mode" onclick="startWeak()">
+      <div><h2>Fehler wiederholen</h2><p>Nur Fragen, die du falsch hattest</p></div><div class="n" id="nWeak">0</div>
+    </button>
+    <button class="mode" onclick="startCards()">
+      <div><h2>Karteikarten</h2><p>Begriffe, Formeln und Grenzwerte zum Auswendiglernen</p></div><div class="n" id="nCards"></div>
+    </button>
+  </div>
+
+  <div class="cats">
+    <h3>Bereiche für „Üben“</h3>
+    <div class="chips" id="chips"></div>
+    <div style="margin-top:8px"><button class="linkbtn" onclick="toggleAll()">Alle an/aus</button></div>
+  </div>
+
+  <div class="stats">
+    <h3>Dein Lernstand</h3>
+    <div id="statList"></div>
+    <div class="note">Der Lernstand gilt für diese Sitzung. Mit „Lernstand kopieren“ bekommst du einen Code, den du später über „Lernstand einfügen“ wieder laden kannst.
+      <br><button class="linkbtn" onclick="exportProgress()">Lernstand kopieren</button> &nbsp;·&nbsp; <button class="linkbtn" onclick="importProgress()">Lernstand einfügen</button></div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="screen" id="s-quiz">
+  <div class="topbar"><span id="qCounter"></span><span id="qScore"></span><span class="timer" id="qTimer"></span></div>
+  <div class="fader"><i id="fader"></i></div>
+  <div class="cat" id="qCat"></div>
+  <div class="q" id="qText"></div>
+  <div class="answers" id="qAnswers"></div>
+  <div id="qExpl"></div>
+  <div class="actions">
+    <button class="btn ghost" onclick="goHome()">Beenden</button>
+    <button class="btn" id="nextBtn" onclick="nextQ()" style="display:none">Weiter</button>
+  </div>
+</section>
+
+<!-- ERGEBNIS -->
+<section class="screen" id="s-result">
+  <div class="result">
+    <div class="big" id="rPct"></div>
+    <p id="rDetail"></p>
+    <div class="grade" id="rGrade"></div>
+  </div>
+  <div class="review" id="rReview"></div>
+  <div class="actions"><button class="btn" onclick="goHome()">Zur Startseite</button></div>
+</section>
+
+<!-- KARTEN -->
+<section class="screen" id="s-cards">
+  <div class="topbar"><span id="cCounter"></span><span id="cCat"></span></div>
+  <div class="card" id="card" onclick="flipCard()"></div>
+  <div class="actions">
+    <button class="btn ghost" onclick="goHome()">Beenden</button>
+    <button class="btn ghost" onclick="prevCard()">Zurück</button>
+    <button class="btn" onclick="nextCard()">Nächste</button>
+  </div>
+</section>
+</div>
+
+<script>
+/* ===================== FRAGENPOOL =====================
+   Format: [Bereich, Frage, [Antworten], Index der richtigen Antwort, Erklärung]
+*/
+const E="Elektrotechnik", L="Lichttechnik", T="Tontechnik", R="Rigging & Traversen",
+      S="Sicherheit & Recht", V="Video & Medientechnik", P="Planung & Organisation", W="Wirtschaft & Sozialkunde", B="Bühne & Bühnenbau";
+
+const Q=[
+/* ---------- ELEKTROTECHNIK ---------- */
+[E,"Wie lautet das Ohmsche Gesetz?",["U = R · I","U = I / R","R = U · I","I = U · R"],0,"Spannung = Widerstand × Strom. Umgestellt: I = U/R und R = U/I."],
+[E,"Ein Scheinwerfer mit 1000 W hängt an 230 V. Wie groß ist der Strom?",["ca. 2,3 A","ca. 4,3 A","ca. 8,7 A","ca. 10 A"],1,"I = P/U = 1000 W / 230 V ≈ 4,35 A."],
+[E,"Wie groß ist die Spannung zwischen zwei Außenleitern (L1–L2) im deutschen Drehstromnetz?",["230 V","400 V","380 V","690 V"],1,"Außenleiterspannung 400 V, Strangspannung (L–N) 230 V. 380 V ist der veraltete Wert."],
+[E,"Welche Netzfrequenz hat das europäische Verbundnetz?",["50 Hz","60 Hz","100 Hz","16,7 Hz"],0,"50 Hz. 60 Hz z. B. in den USA, 16,7 Hz bei der Bahn."],
+[E,"Welche Farbe hat ein CEE-Stecker für 400 V Drehstrom?",["Blau","Gelb","Rot","Schwarz"],2,"Rot = 400 V (5-polig), Blau = 230 V (3-polig), Gelb = 110 V."],
+[E,"Wie viele Pole hat ein CEE-Drehstromstecker 16 A?",["3","4","5","6"],2,"L1, L2, L3, N und PE – also 5 Pole."],
+[E,"Welche Aderfarbe hat der Neutralleiter N?",["Braun","Blau","Grau","Grün-gelb"],1,"L1 braun, L2 schwarz, L3 grau, N blau, PE grün-gelb."],
+[E,"Welche Aderfarbe hat L3?",["Braun","Schwarz","Grau","Blau"],2,"L1 braun, L2 schwarz, L3 grau."],
+[E,"Bei welchem Fehlerstrom muss ein RCD (FI) für Steckdosenstromkreise bis 32 A spätestens auslösen?",["10 mA","30 mA","100 mA","300 mA"],1,"30 mA ist die Vorgabe für den Personenschutz an Steckdosen bis 32 A. 300 mA gibt es als Brandschutz-RCD."],
+[E,"Welche Auslösecharakteristik hat ein Leitungsschutzschalter „B16“?",["Magnetisch bei 3–5 × In","Magnetisch bei 5–10 × In","Magnetisch bei 10–20 × In","Keine magnetische Auslösung"],0,"B: 3–5 × In, C: 5–10 × In, D: 10–20 × In. Für Lichtlasten mit hohem Einschaltstrom nimmt man oft C."],
+[E,"Wie lauten die fünf Sicherheitsregeln in der richtigen Reihenfolge?",["Freischalten – gegen Wiedereinschalten sichern – Spannungsfreiheit feststellen – Erden und Kurzschließen – benachbarte Teile abdecken","Spannungsfreiheit feststellen – Freischalten – Erden – Abdecken – Sichern","Freischalten – Erden – Sichern – Spannungsfreiheit prüfen – Abdecken","Abdecken – Freischalten – Sichern – Erden – Prüfen"],0,"Die Reihenfolge ist Prüfungsklassiker – am besten als Merksatz auswendig lernen."],
+[E,"Welcher Mindestquerschnitt ist für eine 32-A-CEE-Verlängerung üblich?",["2,5 mm²","4 mm²","6 mm²","10 mm²"],2,"Faustregel Veranstaltungstechnik: 16 A → 2,5 mm², 32 A → 6 mm², 63 A → 16 mm², 125 A → 35 mm²."],
+[E,"Welcher Querschnitt gehört zu einer 63-A-Zuleitung?",["6 mm²","10 mm²","16 mm²","25 mm²"],2,"63 A → 16 mm² (bei üblicher Länge und Verlegeart)."],
+[E,"Welcher Querschnitt ist für 125 A üblich?",["16 mm²","25 mm²","35 mm²","50 mm²"],2,"125 A → 35 mm²; oft als Powerlock-Einzeladern ausgeführt."],
+[E,"Wie hoch ist die maximale Strombelastung einer Schuko-Steckdose?",["10 A","13 A","16 A","20 A"],2,"Schuko = 16 A. Dauerlast sollte darunter bleiben (Erwärmung)."],
+[E,"Welche Scheinleistung kann ein 63-A-Drehstromanschluss maximal liefern?",["ca. 14,5 kVA","ca. 25 kVA","ca. 43,6 kVA","ca. 87 kVA"],2,"S = √3 · U · I = 1,732 · 400 V · 63 A ≈ 43,6 kVA."],
+[E,"Welche Leistung liefert ein 32-A-CEE-Anschluss (Drehstrom) ungefähr?",["7,4 kW","11 kW","22 kW","44 kW"],2,"√3 · 400 · 32 ≈ 22,2 kVA."],
+[E,"Welche Leistung liefert ein 16-A-CEE-Anschluss (Drehstrom) ungefähr?",["3,7 kW","11 kW","16 kW","22 kW"],1,"√3 · 400 · 16 ≈ 11 kVA. Einphasig 16 A wären nur 3,7 kW."],
+[E,"Was bedeutet Schutzklasse II?",["Schutzleiteranschluss","Schutzisolierung (doppelte Isolierung)","Schutzkleinspannung","Schutz durch Erdung"],1,"Klasse I: Schutzleiter, Klasse II: schutzisoliert (Symbol Doppelquadrat), Klasse III: Schutzkleinspannung (SELV/PELV)."],
+[E,"Welche Schutzart ist mindestens für Geräte im Freien bei Regen sinnvoll?",["IP20","IP44","IP54","IP65"],1,"IP44 = geschützt gegen Spritzwasser. Für dauerhaften Außeneinsatz besser IP65 (strahlwassergeschützt)."],
+[E,"Wofür steht die erste Ziffer der IP-Schutzart?",["Wasserschutz","Schutz gegen Fremdkörper und Berührung","Stoßfestigkeit","Temperaturbereich"],1,"Erste Ziffer: Fremdkörper/Berührung (0–6), zweite Ziffer: Wasser (0–9)."],
+[E,"Warum sollte eine Kabeltrommel bei hoher Last komplett abgerollt werden?",["Wegen der Spannungserhöhung","Weil sich die Leitung sonst überhitzt","Wegen des Kabelsalats","Wegen der Funkstörungen"],1,"Aufgewickelte Leitungen können ihre Wärme nicht abgeben – Brandgefahr. Auf der Trommel steht meist eine reduzierte Belastung."],
+[E,"In welcher Reihenfolge werden Powerlock-Einzeladern gesteckt?",["L1, L2, L3, N, PE","PE zuerst, dann N, dann L1–L3","N zuerst, dann PE, dann L1–L3","Reihenfolge ist egal"],1,"Schutzleiter zuerst, dann Neutralleiter, dann Außenleiter – beim Trennen umgekehrt."],
+[E,"Wer darf elektrische Anlagen in Betrieb nehmen und prüfen?",["Jeder Mitarbeiter nach Einweisung","Nur eine Elektrofachkraft","Der Veranstalter","Der Rigger"],1,"Die Elektrofachkraft. Die Fachkraft für Veranstaltungstechnik gilt als Elektrofachkraft für festgelegte Tätigkeiten (EFKffT) – nur im ausgebildeten Bereich."],
+[E,"Welche Vorschrift regelt die Prüfung elektrischer Betriebsmittel im Betrieb?",["DGUV Vorschrift 3","DGUV Vorschrift 17","VStättVO","ArbZG"],0,"DGUV Vorschrift 3 (früher BGV A3) – Prüfung ortsveränderlicher Betriebsmittel, Prüfplakette."],
+[E,"Welcher Spannungsfall gilt auf Leitungen als Richtwert, der nicht überschritten werden sollte?",["1 %","3 %","10 %","20 %"],1,"Als Richtwert ca. 3 % – bei langen Kabelwegen Querschnitt erhöhen."],
+[E,"Wie groß ist der Neutralleiterstrom bei symmetrischer Belastung aller drei Phasen?",["Dreifacher Phasenstrom","Gleich dem Phasenstrom","Nahezu Null","Halber Phasenstrom"],2,"Bei gleicher Last auf L1, L2, L3 heben sich die Ströme im N auf – daher Phasen gleichmäßig belasten."],
+[E,"Was bewirken viele Dimmer oder Schaltnetzteile im Netz?",["Höhere Spannung","Oberwellen (Oberschwingungen), die den N-Leiter zusätzlich belasten","Weniger Blindleistung","Nichts Besonderes"],1,"Nichtlineare Lasten erzeugen Oberschwingungen; die 3. Harmonische addiert sich im N-Leiter. Deshalb keine reduzierten N-Querschnitte."],
+[E,"Wie arbeiten klassische Theaterdimmer?",["Phasenanschnittsteuerung mit Thyristor/Triac","Spannungsteiler","Trafo-Umschaltung","PWM am Gleichstrom"],0,"Phasenanschnitt: Die Sinuswelle wird angeschnitten – daher das typische Brummen der Drosseln (Sinusdimmer arbeiten anders)."],
+[E,"Was ist bei einem mobilen Stromerzeuger (Generator) zwingend zu beachten?",["Er braucht kein Schutzkonzept","Schutzmaßnahme (z. B. Erdung/Potentialausgleich) gemäß Vorgabe des Herstellers und der Elektrofachkraft","Er darf nur mit Schuko betrieben werden","Er muss in Gebäuden stehen"],1,"Ohne wirksame Schutzmaßnahme funktioniert der RCD nicht wie erwartet. Außerdem Abgase, Lärm, Kraftstofflagerung beachten."],
+[E,"Was ist Blindleistung?",["Leistung, die in Wärme umgesetzt wird","Leistung, die zwischen Erzeuger und Verbraucher hin- und herpendelt und keine Arbeit verrichtet","Verlustleistung im Kabel","Die Nennleistung eines Gerätes"],1,"Blindleistung (var) entsteht bei induktiven/kapazitiven Lasten. Wirkleistung (W) + Blindleistung = Scheinleistung (VA)."],
+[E,"Was bedeutet ein Leistungsfaktor cos φ = 1?",["Reine Blindlast","Reine Wirklast","Kurzschluss","Leerlauf"],1,"cos φ = 1 → Strom und Spannung sind in Phase, die gesamte Scheinleistung ist Wirkleistung."],
+[E,"Zwei 500-W-Scheinwerfer und ein 1000-W-Scheinwerfer hängen an einem 16-A-Kreis (230 V). Reicht das?",["Nein, viel zu viel","Ja, ca. 8,7 A","Nur mit Drehstrom","Nur wenn gedimmt"],1,"2000 W / 230 V ≈ 8,7 A < 16 A – passt."],
+[E,"Was passiert, wenn Gehäuse mehrerer Geräte über die Signalleitung und den Schutzleiter verbunden sind?",["Nichts","Es kann eine Brummschleife entstehen","Der RCD löst sofort aus","Die Spannung steigt"],1,"Brummschleife (50-Hz-Brummen) – Abhilfe: Ground Lift an der DI-Box oder Trenntrafo, niemals den PE abklemmen."],
+[E,"Wie lange gilt eine Erste Hilfe bei Stromunfall als richtig begonnen?",["Erst nach Eintreffen des Arztes","Zuerst Stromkreis abschalten/Person aus dem Stromkreis bringen, dann Erste Hilfe und Notruf","Sofort anfassen und wegziehen","Keine Erste Hilfe bei Strom"],1,"Eigenschutz zuerst: Spannungsquelle abschalten oder Person mit isolierendem Gegenstand trennen, dann Notruf 112."],
+[E,"Welche Spannung gilt als Grenze der berührungsgefährlichen Wechselspannung?",["12 V","25 V","50 V","120 V"],2,"50 V AC / 120 V DC gelten als Grenzwerte, ab denen Schutzmaßnahmen gegen Berühren nötig sind."],
+[E,"Was misst man mit einem Spannungsprüfer (zweipolig) vor Arbeiten?",["Den Widerstand","Die Spannungsfreiheit","Den Strom","Die Frequenz"],1,"Zweipoliger Spannungsprüfer (kein Phasenprüfer/„Lügenstift“) für Regel 3: Spannungsfreiheit feststellen."],
+[E,"Wie viele Schuko-Stromkreise können sinnvoll an einem 32-A-Verteiler hängen?",["1","2","6 (je Phase 2 × 16 A)","12"],2,"32 A je Phase → typisch 2 × 16 A pro Phase = 6 × 16 A Schuko-Kreise, jeweils mit LS und RCD."],
+[E,"Was bedeutet „Steuerspannung“ bei einem Schütz?",["Die Netzspannung am Verbraucher","Die Spannung, mit der die Spule des Schützes geschaltet wird","Die DMX-Spannung","Die Batteriespannung"],1,"Schütze schalten hohe Ströme mit einer kleinen Steuerspannung (z. B. 24 V oder 230 V) an der Spule."],
+[E,"Was ist eine Potentialausgleichsschiene?",["Ein Kabelkanal","Eine Sammelschiene, die alle leitfähigen Teile auf gleiches Potential bringt","Ein Dimmermodul","Ein Sicherungskasten"],1,"Der Potentialausgleich verbindet Traversen, Bühnengerüste, Gehäuse usw. – wichtig bei Freiluftbühnen und Generatorbetrieb."],
+[E,"Warum ist es problematisch, Moving Heads an einem Dimmerkanal zu betreiben?",["Sie brauchen 400 V","Die Elektronik verträgt keinen Phasenanschnitt; Netzteile können zerstört werden","Sie werden zu hell","Es ist kein Problem"],1,"Elektronische Geräte immer an „Non-Dim“/Direktstrom (Hot Power) betreiben, niemals an geregelten Dimmerkreisen."],
+
+/* ---------- LICHTTECHNIK ---------- */
+[L,"Wie viele Kanäle hat ein DMX512-Universum?",["256","512","1024","2048"],1,"512 Kanäle mit je 8 Bit (Werte 0–255)."],
+[L,"Welchen Wertebereich hat ein DMX-Kanal?",["0–100","0–255","0–512","0–1023"],1,"8 Bit = 256 Stufen (0–255). 16-Bit-Kanäle (z. B. Pan/Tilt fein) belegen zwei DMX-Kanäle."],
+[L,"Welchen Abschlusswiderstand benötigt eine DMX-Linie?",["50 Ω","75 Ω","120 Ω","600 Ω"],2,"DMX basiert auf RS-485 → 120 Ω zwischen Pin 2 und 3 am letzten Gerät."],
+[L,"Wie viele Geräte dürfen an einer DMX-Linie ohne Splitter/Booster hängen?",["16","32","64","unbegrenzt"],1,"Max. 32 Empfänger (Unit Loads) je Linie – danach Splitter/Repeater verwenden."],
+[L,"Welche Steckverbinder sieht die DMX-Norm vor?",["3-pol XLR","5-pol XLR","RJ45","BNC"],1,"Norm: 5-pol XLR. 3-pol ist zwar verbreitet, aber nicht normkonform; Pinbelegung 1 Masse, 2 Data−, 3 Data+."],
+[L,"Welches Protokoll überträgt DMX über Ethernet und ist ANSI-genormt (E1.31)?",["Art-Net","sACN","MIDI","OSC"],1,"sACN (Streaming ACN, E1.31) ist die Norm; Art-Net ist der Quasi-Standard von Artistic Licence."],
+[L,"Wofür steht RDM in der Lichttechnik?",["Rapid Dimmer Mode","Remote Device Management","Remote Data Multiplex","Rigging Data Module"],1,"RDM erlaubt bidirektionale Kommunikation über die DMX-Leitung, z. B. Adressen fernvergeben."],
+[L,"Welche Einheit hat der Lichtstrom?",["Candela (cd)","Lumen (lm)","Lux (lx)","cd/m²"],1,"Lichtstrom Lumen, Lichtstärke Candela, Beleuchtungsstärke Lux, Leuchtdichte cd/m²."],
+[L,"Welche Einheit hat die Beleuchtungsstärke?",["Lumen","Lux","Candela","Watt"],1,"1 lx = 1 lm/m² – der Lichtstrom, der auf eine Fläche trifft."],
+[L,"Was gibt die Lichtstärke (Candela) an?",["Den gesamten Lichtstrom einer Lampe","Den Lichtstrom pro Raumwinkel in eine Richtung","Die Helligkeit einer Fläche","Die Farbtemperatur"],1,"Candela beschreibt, wie viel Licht in eine bestimmte Richtung abgestrahlt wird – wichtig für die Bündelung."],
+[L,"Wie ändert sich die Beleuchtungsstärke, wenn der Abstand zum Scheinwerfer verdoppelt wird?",["Halbiert sich","Viertelt sich","Bleibt gleich","Verdoppelt sich"],1,"Fotometrisches Entfernungsgesetz: E = I / r². Doppelter Abstand → ein Viertel."],
+[L,"Welche Farbtemperatur hat eine Halogenlampe ungefähr?",["2000 K","3200 K","5600 K","6500 K"],1,"Halogen ≈ 3200 K (warm), Tageslicht/HMI ≈ 5600 K, bedeckter Himmel bis 6500 K+."],
+[L,"Welche Farbtemperatur entspricht Tageslicht?",["2700 K","3200 K","5600 K","10000 K"],2,"Ca. 5600 K – deshalb heißen Entladungslampen wie HMI „Tageslichtscheinwerfer“."],
+[L,"Was sagt der CRI (Ra) aus?",["Die Helligkeit","Die Farbwiedergabe im Vergleich zu einer Referenzlichtquelle","Die Lebensdauer","Die Farbtemperatur"],1,"CRI 100 = perfekte Farbwiedergabe (Glühlicht). Gute LEDs liegen bei 90+."],
+[L,"Welche Grundfarben nutzt die additive Farbmischung?",["Cyan, Magenta, Gelb","Rot, Grün, Blau","Rot, Gelb, Blau","Schwarz, Weiß, Grau"],1,"Additiv (Licht): RGB → zusammen Weiß. Subtraktiv (Farbfilter, Druck): CMY → zusammen Schwarz."],
+[L,"Welche Farbmischung verwenden Moving Heads mit CMY-Farbmischeinheit?",["Additiv","Subtraktiv","Beides","Keine"],1,"Farbfilter filtern Anteile aus weißem Licht heraus – subtraktive Mischung."],
+[L,"Welcher Scheinwerfer hat eine geriffelte Stufenlinse?",["PAR","Fresnel","Profilscheinwerfer","PC"],1,"Fresnel-Linse = Stufenlinse mit weichem Rand. PC (Plankonvex) hat eine glatte Linse und härtere Kante."],
+[L,"In welchem Scheinwerfer wird ein Gobo eingesetzt?",["Fresnel","PAR 64","Profilscheinwerfer","Fluter"],2,"Nur der Profilscheinwerfer (ERS) hat eine Abbildungsoptik mit Gobo-Schlitten, Blendenschiebern und Iris."],
+[L,"Was ist der Unterschied zwischen einem PAR-64-Scheinwerfer CP60 und CP62?",["Leistung","Abstrahlwinkel (Very Narrow vs. Medium)","Sockel","Farbtemperatur"],1,"CP60 VNSP, CP61 NSP, CP62 MFL, CP95 WFL – gleiche 1000 W, andere Streuung."],
+[L,"Wozu dient die Torblende (Barndoor) an einem Fresnel?",["Zum Dimmen","Zum groben Beschneiden des Lichtkegels","Als Farbfilterhalter","Als Hitzeschutz"],1,"Vier Klappen beschneiden das Licht – z. B. damit nichts in den Zuschauerraum fällt."],
+[L,"Warum darf man einen Halogen-Brenner nicht mit bloßen Fingern anfassen?",["Er ist immer heiß","Hautfett brennt sich ein, der Quarzglaskolben wird beschädigt","Wegen Stromschlag","Das ist erlaubt"],1,"Fett zerstört das Quarzglas beim Aufheizen. Mit Tuch/Handschuh anfassen, bei Berührung mit Alkohol reinigen."],
+[L,"Was ist bei Entladungslampen (HMI, MSD) anders als bei Halogen?",["Sie sind dimmbar über Phasenanschnitt","Sie brauchen ein Vorschaltgerät und eine Zündung, sind mechanisch (Shutter) gedimmt","Sie haben eine Wendel","Sie leuchten warmweiß"],1,"Entladungslampen brauchen Zündspannung + Vorschaltgerät; Helligkeit meist per Dimmer-Shutter. Nach dem Ausschalten oft Abkühlzeit (kein Hot Restrike)."],
+[L,"Was ist der Unterschied zwischen Hazer und Nebelmaschine?",["Keiner","Hazer erzeugt feinen, gleichmäßigen Dunst zur Sichtbarmachung von Lichtstrahlen; Nebelmaschine erzeugt dichte Nebelwolken","Nebel ist immer ölbasiert","Hazer läuft nur mit CO₂"],1,"Haze macht Beams sichtbar, Nebel schafft Effekte/Wolken. Beide: Lüftung, Brandmeldeanlage (Abschaltung!) und Fluid-Zulassung beachten."],
+[L,"Was muss vor dem Einsatz von Nebel in einer Halle unbedingt geklärt werden?",["Ob der Nebel gut riecht","Ob die Brandmeldeanlage (Rauchmelder) für die Zeit abgestellt oder ausgeblendet werden kann","Ob es Strom gibt","Nichts"],1,"Rauchmelder lösen auf Nebel aus → Fehlalarm der Feuerwehr, hohe Kosten. Mit Betreiber und Brandschutzbeauftragtem abstimmen."],
+[L,"Worauf muss bei Stroboskopen und schnellem Blitzlicht hingewiesen werden?",["Auf Lärm","Auf mögliche Anfälle bei fotosensitiver Epilepsie","Auf UV-Strahlung","Auf Hitze"],1,"Warnhinweis am Eingang, Frequenzen um 15–20 Hz sind besonders kritisch."],
+[L,"Ab welcher Laserklasse ist ein Laserschutzbeauftragter erforderlich?",["Klasse 1","Klasse 2","Ab Klasse 3R/3B","Nur bei Klasse 4"],2,"Showlaser sind meist Klasse 3B/4 → Laserschutzbeauftragter, Gefährdungsbeurteilung, Anzeige bei der Behörde (OStrV)."],
+[L,"Wozu dient die Safety (Sicherungsseil) an einem Scheinwerfer?",["Als Diebstahlschutz","Als zweite unabhängige Aufhängung, falls die Klemme versagt","Als Erdung","Als Kabelhalter"],1,"Jeder hängende Scheinwerfer bekommt eine Safety über die Traverse/Rohr, kurz gehalten (kleine Fallhöhe)."],
+[L,"Was versteht man unter Drei-Punkt-Beleuchtung?",["Drei PARs nebeneinander","Führungslicht, Aufhelllicht, Gegenlicht","Rot, Grün, Blau","Front, Seite, Boden"],1,"Key light (Führung), Fill light (Aufhellung), Back light (Kante/Gegenlicht) – Basis der Porträt- und Bühnenbeleuchtung."],
+[L,"Warum werden Bühnen zusätzlich von hinten (Gegenlicht) beleuchtet?",["Um den Boden zu erwärmen","Um Personen plastisch vom Hintergrund abzuheben","Weil Frontlicht verboten ist","Für die Kameras nur"],1,"Gegenlicht erzeugt eine Lichtkante und Tiefe – ohne wirkt das Bild flach."],
+[L,"Welchen Lampensockel hat ein PAR 64 mit CP-Lampe?",["E27","GX16d","G9.5","GY9.5"],1,"CP60–95: Sockel GX16d. Profil/Fresnel 1 kW oft GX9.5, HPL G9.5."],
+[L,"Was bedeutet „Dimmer Curve“ / Dimmerkurve?",["Farbfilterkurve","Zuordnung zwischen Steuerwert und Ausgangshelligkeit (z. B. linear, S-Kurve)","Die Lebensdauerkurve","Der Kabelverlauf"],1,"Kurven gleichen die nichtlineare Wahrnehmung des Auges aus; bei LEDs wichtig für weiches Ausblenden."],
+[L,"Was ist ein Verfolger (Followspot)?",["Ein Moving Head","Ein manuell geführter Profilscheinwerfer für Solisten","Eine Kameraverfolgung","Eine Nebelmaschine"],1,"Meist mit Iris, Farbwechsler, Dimmer; steht auf Tower oder Balkon. Bediener braucht Intercom."],
+[L,"Warum flimmern manche LED-Scheinwerfer auf Kameras?",["Weil sie zu hell sind","Weil die PWM-Frequenz der LED-Ansteuerung mit der Kamera-Bildrate interferiert","Weil DMX zu langsam ist","Weil sie 400 V brauchen"],1,"Abhilfe: PWM-Frequenz im Gerät erhöhen („High Frequency Mode“) oder Shutterzeit der Kamera anpassen."],
+[L,"Was ist ein „Wash“ bei Moving Heads?",["Ein Beam mit scharfem Strahl","Ein flächiges, weiches Licht ohne Gobos","Ein Reinigungsprogramm","Ein Lauflicht"],1,"Spot = Gobos/Fokus, Wash = weiche Fläche, Beam = enger, heller Strahl für Luftbilder."],
+[L,"Welche Lichtquelle hat den besten Wirkungsgrad (Lumen pro Watt)?",["Glühlampe","Halogen","LED","Kerze"],2,"LED 100–200 lm/W, Halogen ca. 20 lm/W, Glühlampe ca. 12 lm/W."],
+[L,"Was ist ein Farbfilter (Gel) aus Polyester, z. B. „Lee 201“?",["Ein Konversionsfilter Tageslicht→Kunstlicht (CTB)","Ein Neutralfilter","Ein Gobo","Ein Diffusor"],0,"CTB (Color Temperature Blue) wandelt 3200 K in ca. 5600 K; CTO umgekehrt. Nummern (Lee/Rosco) lernen lohnt sich."],
+[L,"Was ist ein „Frost“-Filter?",["Ein Farbfilter","Ein Diffusionsfilter, der das Licht weicher macht","Ein UV-Filter","Ein Kühlmittel"],1,"Frost streut den Lichtkegel, kaschiert harte Kanten und Gobo-Schärfe."],
+[L,"Wie werden Lichtstimmungen in einer Lichtsteuerung gespeichert?",["Als Cues (Stimmungen) in einer Cue-Liste","Als Sequenzen im DMX-Kabel","Als Gobos","Im Dimmer"],0,"Cue = Stimmung mit Werten aller Kanäle + Ein-/Ausblendzeit. „Go“ startet den nächsten Cue."],
+[L,"Was bedeutet HTP bei Lichtpulten?",["Highest Takes Precedence – der höhere Wert gewinnt (typisch für Dimmer)","High Tension Power","Latest Takes Precedence","Halogen Type Parameter"],0,"HTP für Intensität, LTP (Latest Takes Precedence) für Attribute wie Pan/Tilt/Farbe."],
+[L,"Welche DMX-Startadresse muss ein zweiter 8-Kanal-Scheinwerfer bekommen, wenn der erste auf 1 steht?",["2","8","9","16"],2,"Erster: Kanäle 1–8 → zweiter beginnt bei 9."],
+[L,"Ein Moving Head belegt 24 Kanäle. Wie viele passen maximal in ein Universum?",["16","21","24","32"],1,"512 / 24 = 21,3 → 21 Geräte."],
+[L,"Wie hoch sollte die Beleuchtungsstärke für eine gut sichtbare Sprecherbühne mit Kamera mindestens sein?",["ca. 50 lx","ca. 300 lx","ca. 800–1500 lx","ca. 10.000 lx"],2,"Für Kameras/TV liegen Richtwerte bei etwa 800–1500 lx auf der Person, für reine Sicht reichen weniger."],
+[L,"Was muss bei Scheinwerfern mit Halogen-/Entladungslampen zum Brandschutz eingehalten werden?",["Nichts","Mindestabstand zu brennbaren Stoffen laut Typenschild","Nur eine Safety","Abstand 10 cm reicht immer"],1,"Auf dem Gerät steht z. B. „0,5 m“ – Abstand zu Vorhängen, Deko und Decke einhalten."],
+
+/* ---------- TONTECHNIK ---------- */
+[T,"Wie groß ist der Hörbereich des Menschen?",["16 Hz – 16 kHz","20 Hz – 20 kHz","50 Hz – 15 kHz","10 Hz – 40 kHz"],1,"Etwa 20 Hz bis 20 kHz; die obere Grenze sinkt mit dem Alter."],
+[T,"Wie schnell breitet sich Schall in Luft (20 °C) aus?",["ca. 300 m/s","ca. 343 m/s","ca. 1000 m/s","ca. 1500 m/s"],1,"343 m/s. Faustregel: ca. 34 cm pro Millisekunde, ca. 3 ms pro Meter."],
+[T,"Welche Wellenlänge hat ein 100-Hz-Ton in Luft?",["0,34 m","1,7 m","3,43 m","34 m"],2,"λ = c/f = 343 / 100 = 3,43 m."],
+[T,"Um wie viel dB steigt der Schalldruckpegel bei Verdopplung der Verstärkerleistung?",["1 dB","3 dB","6 dB","10 dB"],1,"Doppelte Leistung = +3 dB; doppelte Spannung/Schalldruck = +6 dB; doppelt so laut empfunden ≈ +10 dB."],
+[T,"Was bedeutet +6 dB?",["Doppelte Leistung","Doppelte Spannung bzw. doppelter Schalldruck","Doppelte Lautheit","Zehnfache Leistung"],1,"6 dB entsprechen Faktor 2 bei Feldgrößen (Spannung, Schalldruck)."],
+[T,"Wie ändert sich der Schalldruckpegel bei Verdopplung des Abstands zu einer Punktschallquelle im Freifeld?",["−3 dB","−6 dB","−10 dB","−20 dB"],1,"Abstandsgesetz: −6 dB pro Abstandsverdopplung (Punktquelle). Linienquelle (Line-Array im Nahfeld): −3 dB."],
+[T,"Welche Spannung hat die Phantomspeisung?",["12 V","24 V","48 V","230 V"],2,"P48 = 48 V DC über Pin 2 und 3 gegen Pin 1. Nötig für Kondensatormikrofone und aktive DI-Boxen."],
+[T,"Welche Pinbelegung hat ein XLR-Audiostecker?",["1 Hot, 2 Cold, 3 Masse","1 Masse, 2 Hot (+), 3 Cold (−)","1 Cold, 2 Masse, 3 Hot","1 Hot, 2 Masse, 3 Cold"],1,"Merksatz: „1 – Masse, 2 – Plus, 3 – Minus“."],
+[T,"Welcher Mikrofontyp braucht keine Phantomspeisung?",["Kondensator","Elektret (meist)","Dynamisch","Alle brauchen sie"],2,"Dynamische Mikros (Tauchspule, z. B. SM58) arbeiten passiv. Kondensatormikros brauchen Speisung."],
+[T,"Welche Richtcharakteristik nimmt Schall von vorne auf und unterdrückt hinten am stärksten?",["Kugel","Niere","Acht","Keine"],1,"Niere (Cardioid): maximale Dämpfung bei 180°. Superniere/Hyperniere: enger vorn, aber kleine Rückkeule."],
+[T,"Wo liegt die maximale Auslöschung bei einer Superniere?",["90°","120°","180°","0°"],1,"Superniere ≈ 125°, Hyperniere ≈ 110° – wichtig für die Position von Monitoren!"],
+[T,"Was bewirkt der Nahbesprechungseffekt?",["Höhenanhebung","Bassanhebung bei geringem Abstand an gerichteten Mikrofonen","Rauschen","Übersteuerung"],1,"Druckgradienten-Mikros (Niere) heben bei wenigen Zentimetern die Tiefen an – Sänger nutzen das bewusst."],
+[T,"Was macht eine DI-Box?",["Verstärkt das Signal","Wandelt ein hochohmiges, unsymmetrisches Signal in ein niederohmiges, symmetrisches Mikrofonsignal","Erzeugt Phantomspeisung","Filtert Bässe"],1,"Direct Injection: z. B. Bass, Keyboard, Laptop. Ground-Lift-Schalter gegen Brummschleifen."],
+[T,"Was ist der Vorteil symmetrischer Signalübertragung?",["Höherer Pegel","Störungen auf beiden Adern werden am Eingang ausgelöscht (Gleichtaktunterdrückung)","Weniger Kabel","Keine Phantomspeisung nötig"],1,"Hot und Cold führen das Signal gegenphasig; Einstreuungen sind gleichphasig und werden im Differenzverstärker aufgehoben."],
+[T,"Zwei 8-Ω-Lautsprecher werden parallel geschaltet. Welche Gesamtimpedanz ergibt sich?",["2 Ω","4 Ω","8 Ω","16 Ω"],1,"Parallel: R = (8·8)/(8+8) = 4 Ω. In Reihe wären es 16 Ω."],
+[T,"Was passiert, wenn die Lautsprecherimpedanz unter die Mindestimpedanz des Verstärkers fällt?",["Der Klang wird besser","Die Endstufe wird überlastet, kann in Schutzschaltung gehen oder Schaden nehmen","Die Lautstärke sinkt","Nichts"],1,"Immer die Mindestlast des Verstärkers (z. B. 4 Ω) beachten."],
+[T,"Welcher Steckverbinder wird für Lautsprecherleitungen verwendet?",["XLR","Speakon (NL4/NL8)","Klinke 6,3","BNC"],1,"Speakon ist berührungssicher und verriegelt – XLR ist für Lautsprecher nicht zulässig (Verwechslungsgefahr, Strom)."],
+[T,"Welche Spannung/Technik nutzt ein ELA-System (z. B. Durchsagen in Hallen)?",["4-Ω-Technik","100-V-Technik","48-V-Technik","Dante"],1,"100-V-Technik: Übertrager, viele Lautsprecher über lange Leitungen, geringe Verluste."],
+[T,"Was verursacht eine Rückkopplung (Feedback)?",["Zu wenig Bass","Schall aus dem Lautsprecher gelangt wieder ins Mikrofon und wird immer weiter verstärkt","Ein defektes Kabel","Zu hohe Phantomspeisung"],1,"Abhilfe: Abstand/Richtung von Mikro und Box, Gain reduzieren, schmale EQ-Bänder (Notch) absenken."],
+[T,"Was regelt beim Kompressor der Parameter „Ratio“?",["Wie schnell er anspricht","Das Verhältnis, um das Signale über dem Threshold reduziert werden","Die Lautstärke","Die Frequenz"],1,"Threshold: ab wann. Ratio: wie stark (z. B. 4:1). Attack/Release: wie schnell. Make-up Gain: Ausgleich."],
+[T,"Wozu dient ein Noise Gate?",["Zum Verstärken","Es schließt den Kanal unterhalb eines Schwellwerts, um Nebengeräusche/Übersprechen zu unterdrücken","Zum Entzerren","Zur Rückkopplungsunterdrückung"],1,"Typisch an Drum-Mikros (Toms)."],
+[T,"Welche Abtastrate ist im professionellen Ton (Video/Broadcast) Standard?",["22,05 kHz","44,1 kHz","48 kHz","96 kHz"],2,"48 kHz (Video/Live), 44,1 kHz (CD). Nach Nyquist muss die Abtastrate mindestens doppelt so hoch sein wie die höchste Signalfrequenz."],
+[T,"Welchen theoretischen Dynamikumfang hat 24-Bit-Audio?",["48 dB","96 dB","144 dB","200 dB"],2,"≈ 6 dB pro Bit: 16 Bit ≈ 96 dB, 24 Bit ≈ 144 dB."],
+[T,"Was ist der Haas-Effekt?",["Das Ohr ortet die Schallquelle nach dem zuerst eintreffenden Schall (bis ca. 30 ms)","Ein Rückkopplungseffekt","Ein Halleffekt","Die Bassanhebung"],0,"Grundlage für Delay-Lines: Verzögerte Lautsprecher werden auf die Hauptbühne „gedelayt“ (+ wenige ms), damit die Ortung vorne bleibt."],
+[T,"Eine Delay-Line steht 34 m vor der Hauptbühne. Welches Delay ist nötig?",["ca. 10 ms","ca. 34 ms","ca. 100 ms","ca. 340 ms"],2,"34 m / 343 m/s ≈ 0,1 s = 100 ms (plus wenige ms für Haas)."],
+[T,"Was ist der Unterschied zwischen Phase und Polarität?",["Keiner","Polarität ist das Vertauschen von + und − (180° bei allen Frequenzen), Phase ist eine zeitabhängige Verschiebung","Phase gibt es nur digital","Polarität gilt nur für Lautsprecher"],1,"Der Ø-Schalter am Pult dreht die Polarität – z. B. bei Snare oben/unten."],
+[T,"Welche Grenzwerte gibt DIN 15905-5 für Beschallung vor?",["85 dB(A)","99 dB(A) als 30-Minuten-Mittelwert, 135 dB(C) Spitzenpegel","110 dB(A) Dauer","Keine"],1,"Ab 95 dB(A) müssen Gehörschutzstöpsel angeboten werden; Messung am lautesten Publikumsplatz."],
+[T,"Ab welchem Tages-Lärmexpositionspegel ist Gehörschutz für Beschäftigte Pflicht?",["80 dB(A)","85 dB(A)","90 dB(A)","99 dB(A)"],1,"Unterer Auslösewert 80 dB(A): Gehörschutz bereitstellen. Oberer Auslösewert 85 dB(A): Tragepflicht (LärmVibrationsArbSchV)."],
+[T,"Was ist Dante?",["Ein Mikrofontyp","Ein Netzwerkprotokoll für Audio über Ethernet (Audinate)","Ein Halleffekt","Ein Steckverbinder"],1,"Audio-over-IP mit vielen Kanälen über Cat-Kabel; Alternativen: AES67, AVB, Ravenna."],
+[T,"Was macht eine aktive Frequenzweiche (Crossover)?",["Sie mischt Signale","Sie teilt das Signal vor den Endstufen in Frequenzbereiche für Sub, Mid, High auf","Sie erzeugt Hall","Sie verstärkt Mikrofone"],1,"Im Systemcontroller/DSP: Crossover, Delay, EQ, Limiter."],
+[T,"Was ist bei Funkmikrofonen in Deutschland zu beachten?",["Nichts, alle Frequenzen sind frei","Nur zugelassene Frequenzbereiche nutzen; manche sind anmeldepflichtig bei der Bundesnetzagentur","Sie sind verboten","Nur 2,4 GHz erlaubt"],1,"Anmeldefreie Bereiche z. B. 823–832 MHz (LTE-Mittenlücke) und 863–865 MHz; 470–608 MHz anmeldepflichtig. Frequenzplanung gegen Intermodulation!"],
+[T,"Warum baut man Subwoofer als Cardioid-Anordnung auf?",["Für mehr Bass auf der Bühne","Um den Bass auf der Bühne zu reduzieren und nach vorne zu richten","Für die Optik","Weil es die Norm vorschreibt"],1,"Durch Delay und Polaritätsumkehr eines rückwärtigen Subs löscht sich Bass hinter dem Stack aus."],
+[T,"Was ist ein Line-Array?",["Ein Lautsprecher mit einem Chassis","Eine vertikale Reihe gleicher Lautsprecher, die sich wie eine Linienquelle verhält (gleichmäßigere Abdeckung, weniger Pegelabfall)","Ein Monitor","Eine Delay-Line"],1,"Einstellung über Splay-Winkel; Auslegung mit Simulationssoftware."],
+[T,"Welches Signal gibt ein „Line-Pegel“-Gerät typischerweise aus?",["−60 dBu (Mikrofonpegel)","+4 dBu (professionell) bzw. −10 dBV (Consumer)","+48 V","0 dBFS"],1,"Mic-Level ist sehr klein, Line-Level ist der Arbeitspegel zwischen Geräten."],
+[T,"Was bedeutet 0 dBFS?",["Normaler Sprechpegel","Der maximal darstellbare Pegel in einem digitalen System (Vollaussteuerung)","Der Pegel der Phantomspeisung","Die Hörschwelle"],1,"Darüber gibt es kein Signal mehr – digitales Clipping."],
+[T,"Was beschreibt der STI-Wert?",["Die Lautstärke","Die Sprachverständlichkeit (0–1)","Die Nachhallzeit","Den Frequenzgang"],1,"Speech Transmission Index; ≥ 0,5 gilt als ausreichend, wichtig für Sprachalarmanlagen."],
+[T,"Was ist die Nachhallzeit RT60?",["Die Zeit bis zum ersten Echo","Die Zeit, in der der Schallpegel um 60 dB abfällt","Die Verzögerung eines Delays","Die Dauer eines Tons"],1,"Konzertsäle ~1,5–2 s, Sprache ~0,5–1 s. Lange RT60 verschlechtert die Verständlichkeit."],
+[T,"Was ist Intermodulation bei Funkstrecken?",["Drahtlose Übertragung","Mischprodukte aus mehreren Sendefrequenzen, die andere Kanäle stören","Ein Dolby-Verfahren","Rauschen im Mikrofon"],1,"Deshalb Frequenzen mit Software koordinieren und Antennen richtig platzieren."],
+[T,"Welche Klinkenbelegung hat ein symmetrisches TRS-Kabel?",["Tip Masse, Ring Hot, Sleeve Cold","Tip Hot, Ring Cold, Sleeve Masse","Tip Cold, Ring Masse, Sleeve Hot","Egal"],1,"Tip = +, Ring = −, Sleeve = Masse."],
+[T,"Was ist ein Monitormix (Aux/Bus)?",["Der Mix für das Publikum","Eine separate Mischung für die Musiker auf der Bühne","Eine Aufnahme","Der Master"],1,"Pre-Fader-Aux-Wege oder eigenes Monitorpult; In-Ear-Monitoring als Alternative zu Wedges."],
+[T,"Welche Frequenz hat der Kammerton a¹?",["220 Hz","440 Hz","880 Hz","1000 Hz"],1,"a¹ = 440 Hz. Eine Oktave höher = doppelte Frequenz (880 Hz)."],
+[T,"Was ist ein Hochpassfilter (Low Cut) am Mikrofonkanal?",["Er entfernt Höhen","Er entfernt tiefe Frequenzen (Trittschall, Rumpeln, Popp-Geräusche)","Er hebt Bässe an","Er komprimiert"],1,"Praktisch an fast allen Kanälen außer Bass/Kick, typisch 80–120 Hz."],
+
+/* ---------- RIGGING ---------- */
+[R,"Welchen Sicherheitsfaktor haben textile Anschlagmittel (Rundschlingen) mindestens?",["4:1","5:1","7:1","10:1"],2,"Rundschlingen/Hebebänder 7:1, Ketten 4:1, Drahtseile 5:1, Schäkel 4:1 bzw. 6:1 je nach Hersteller."],
+[R,"Welche Farbe hat eine 2-t-Rundschlinge nach EN 1492-2?",["Violett","Grün","Gelb","Grau"],1,"Violett 1 t, grün 2 t, gelb 3 t, grau 4 t, rot 5 t, braun 6 t, blau 8 t, orange 10 t."],
+[R,"Welche Tragfähigkeit hat eine gelbe Rundschlinge?",["1 t","2 t","3 t","5 t"],2,"Gelb = 3 t im geraden Zug."],
+[R,"Wie verändert sich die Tragfähigkeit einer Rundschlinge im Schnürgang (Choke)?",["Sie bleibt gleich","Sie sinkt auf 80 %","Sie verdoppelt sich","Sie halbiert sich"],1,"Gerader Zug 100 %, Schnürgang 80 %, umgelegt (Basket, parallel) 200 %."],
+[R,"Was bedeutet WLL?",["Wire Load Limit","Working Load Limit – die zulässige Tragfähigkeit","Weight Lifting Line","Winch Load Level"],1,"WLL steht auf jedem Anschlagmittel und Hebezeug. Bruchlast = WLL × Sicherheitsfaktor."],
+[R,"Wie wirkt sich ein größerer Spreizwinkel zwischen zwei Anschlagsträngen aus?",["Die Belastung pro Strang sinkt","Die Belastung pro Strang steigt","Keine Änderung","Nur die Höhe ändert sich"],1,"Bei 60° Neigungswinkel Faktor 1,0; bei 120° Spreizwinkel trägt jeder Strang bereits die volle Last. Über 120° ist unzulässig."],
+[R,"Bis zu welchem Spreizwinkel dürfen Anschlagmittel maximal eingesetzt werden?",["60°","90°","120°","180°"],2,"Max. 120° Spreizwinkel (Neigungswinkel 60° zur Senkrechten)."],
+[R,"Aus welchem Material bestehen gängige Traversen?",["Stahl S235","Aluminium EN AW-6082 T6","Titan","Edelstahl"],1,"Aluminiumlegierung 6082 T6; Verbindungen über konische Verbinder (Conical) mit Splint oder Schraubverbindung."],
+[R,"Was ist bei konischen Traversenverbindern unbedingt nötig?",["Nur der Bolzen","Bolzen und Sicherungssplint (R-Clip)","Kabelbinder","Nichts"],1,"Ohne Splint kann der Bolzen herausrutschen. Splint immer prüfen, nie mit Draht improvisieren."],
+[R,"Welche Betriebsvorschrift regelt elektrische Kettenzüge in der Veranstaltungstechnik?",["DGUV Vorschrift 3","DGUV Vorschrift 54 / SQ P2 (früher BGV D8 / D8 Plus)","VStättVO","ArbSchG allein"],1,"Kategorien: D8 (nur mit Sekundärsicherung über Personen), D8 Plus (statische Lasten über Personen ohne Sekundärsicherung), C1 (bewegte Lasten über Personen)."],
+[R,"Was darf ein D8-Kettenzug nicht?",["Lasten heben","Lasten ohne zusätzliche Sekundärsicherung über Personen halten","Im Freien arbeiten","Mehr als 250 kg heben"],1,"D8: nach dem Positionieren müssen die Lasten zusätzlich mit Steels (Sekundärsicherung) gesichert werden."],
+[R,"Was zeichnet einen D8-Plus-Kettenzug aus?",["Er ist doppelt so schnell","Doppelte Sicherheit (u. a. zweite Bremse), darf ruhende Lasten über Personen ohne Sekundärsicherung halten","Er ist für Personenbeförderung","Er braucht keinen Motor"],1,"D8 Plus: 8-fache Sicherheit, zweite Bremse. Bewegen der Last über Personen (Show-Move) nur mit C1/BGV C1."],
+[R,"Wann darf eine Last über Personen bewegt werden (Show-Move)?",["Nie","Nur mit Kettenzügen nach C1 und entsprechender Steuerung/Absicherung","Immer bei Aufbau","Nur mit Handkettenzug"],1,"C1-Züge (z. B. mit Lastüberwachung, Not-Aus, Gruppensteuerung) und ein qualifizierter Bediener."],
+[R,"Was ist ein Steel (Sekundärsicherung)?",["Eine Stahlkette","Ein Drahtseil mit Schäkeln, das die Last unabhängig vom Kettenzug sichert","Eine Rundschlinge","Ein Bolzen"],1,"Steels werden nach dem Hochziehen leicht durchhängend, aber kurz, zwischen Traverse und Anschlagpunkt gesetzt."],
+[R,"Wie wird ein Schäkel korrekt belastet?",["Quer zum Bolzen mit seitlichem Zug","In Längsrichtung, Bolzen fest angezogen (bei Sicherheitsschäkeln mit Mutter und Splint)","Nur mit dem Bolzen nach unten","Egal"],1,"Seitliche Belastung reduziert die Tragfähigkeit massiv; Bolzen handfest anziehen und eine Viertelumdrehung zurück (bei Schraubschäkeln)."],
+[R,"Was muss vor jedem Einsatz eines Kettenzugs passieren?",["Nichts, die Jahresprüfung reicht","Sichtprüfung (Kette, Haken, Kabel, Bremsfunktion) durch den Bediener","Ölwechsel","Belastungstest mit 200 %"],1,"Sichtprüfung vor jedem Einsatz; jährliche Prüfung durch Sachkundigen; alle 4 Jahre nach Herstellervorgabe erweitert."],
+[R,"Wie berechnet man die Streckenlast einer Traverse mit gleichmäßig verteilter Last?",["Gesamtlast × Länge","Gesamtlast ÷ Länge (kg/m)","Länge ÷ Gesamtlast","Gesamtlast × 2"],1,"Traversentabellen geben zulässige Lasten als UDL (gleichmäßig verteilt) oder als Punktlast in Feldmitte an – Punktlast ist immer kritischer."],
+[R,"Wo ist das Biegemoment einer beidseitig aufgehängten Traverse am größten?",["An den Auflagern","In der Feldmitte","Am Ende","Überall gleich"],1,"Maximales Biegemoment in der Mitte – deshalb schwere Lasten möglichst nahe an die Aufhängepunkte."],
+[R,"Was ist ein Ground Support?",["Ein Bodenstativ","Ein am Boden stehendes Traversensystem (Türme mit Sleeves) statt Hängen an der Hallendecke","Ein Podest","Ein Kabelkanal"],1,"Wichtig: Ballast, Bodentragfähigkeit, Windlast im Freien, Standsicherheitsnachweis."],
+[R,"Wozu dient eine Lastmesszelle (Load Cell) am Motor?",["Zur Geschwindigkeitsmessung","Zur Anzeige der tatsächlichen Last am Anschlagpunkt","Zur Stromversorgung","Zur Höhenmessung"],1,"Hilft, Überlast an einzelnen Hängepunkten zu erkennen – Deckenpunkte haben begrenzte Tragfähigkeit."],
+[R,"Wer legt die zulässige Belastung der Hallendecke (Hängepunkte) fest?",["Der Rigger nach Gefühl","Der Betreiber/Statiker der Halle (Hängepunktplan)","Der Lichttechniker","Der Veranstalter"],1,"Hängepunktplan einholen, Punktlasten und Gesamtlast einhalten, Rigging-Plot vorlegen."],
+[R,"Was ist beim Heben von Traversen mit mehreren Motoren wichtig?",["Alle Motoren einzeln fahren","Gleichmäßig fahren, Verkantung vermeiden, Kette gerade führen","Immer nur einen Motor nutzen","Motoren ohne Steuerung anschließen"],1,"Ungleichmäßiges Fahren verlagert Lasten auf einzelne Punkte – Gruppensteuerung nutzen."],
+[R,"Ab welcher Absturzhöhe sind Absturzsicherungen an Arbeitsplätzen grundsätzlich erforderlich?",["0,5 m","1 m","2 m","3 m"],1,"Grundsätzlich ab 1 m (bei Bühnenkanten gelten Ausnahmen im Spielbetrieb mit organisatorischen Maßnahmen)."],
+[R,"Was ist PSAgA?",["Persönliche Schutzausrüstung gegen Absturz","Prüfsiegel","Podest-Sicherheits-Ausrüstung","Ein Kettenzugtyp"],0,"Auffanggurt, Verbindungsmittel mit Falldämpfer, Anschlagpunkt – nur nach Unterweisung, Rettungskonzept nötig."],
+[R,"Wer darf Traversen und Anschlagmittel montieren?",["Jeder Helfer","Unterwiesene Personen unter Aufsicht einer befähigten Person / Fachkraft","Nur Ingenieure","Nur der Veranstalter"],1,"Verantwortung liegt bei der Fachkraft/dem Rigger; Stagehands arbeiten nach Anweisung."],
+[R,"Wie wird ein Kettenzug auf einer Traverse typischerweise angeschlagen?",["Mit Kabelbinder","Mit Rundschlinge/Steel um Ober- und Untergurt (Basket) und Schäkel am Haken","Nur am Obergurt mit Haken","Mit Klebeband"],1,"Immer beide Gurte fassen, Diagonalstreben nicht als Anschlagpunkt nutzen."],
+[R,"Was ist eine Truss-Klemme (Half Coupler)?",["Ein Schäkel","Eine Rohrschelle zum Befestigen von Scheinwerfern an Traversenrohren (48–51 mm)","Ein Kettenglied","Ein Traversenverbinder"],1,"Tragfähigkeit beachten (z. B. 50 kg), zusätzlich immer Safety."],
+[R,"Bei Freiluftbühnen: Welche Gefahr ist beim Ground Support am wichtigsten?",["Hitze","Windlast – ab bestimmten Windgeschwindigkeiten müssen Planen/Banner entfernt oder die Bühne abgelassen werden","Regen im Kabel","Vandalismus"],1,"Windlastberechnung und Ballast; Wettermonitoring mit definierten Handlungsschwellen (Abbruchkriterien)."],
+[R,"Was gilt für die Verwendung von Anschlagmitteln mit fehlendem/unlesbarem Etikett?",["Weiterverwenden, wenn sie gut aussehen","Aussondern – ohne Kennzeichnung keine Verwendung","Nur für leichte Lasten","Nur als Safety"],1,"Ohne Angaben zu WLL, Hersteller, Norm ist die Tragfähigkeit nicht nachweisbar."],
+[R,"Welche Kettengüteklasse haben Ketten von D8/D8+-Zügen und Anschlagketten üblich?",["Güteklasse 2","Güteklasse 5","Güteklasse 8 (bzw. 10)","Güteklasse 12"],2,"Grade 80 (Güteklasse 8) mit Sicherheitsfaktor 4:1 bei Anschlagketten."],
+
+/* ---------- SICHERHEIT & RECHT ---------- */
+[S,"Ab wie vielen Besuchern gilt eine Versammlungsstätte nach Muster-VStättVO?",["50","100","200","500"],2,"Versammlungsräume ab 200 Besucher (einzeln oder zusammen); im Freien mit Szenenflächen ab 1000 Besucher; Sportstadien ab 5000."],
+[S,"Wie viele Besucher dürfen auf einer Stehplatzfläche pro m² angenommen werden?",["1","2","4","6"],1,"2 Besucher/m² Stehplätze, 1 Besucher/m² bei Sitzplätzen an Tischen, Reihenbestuhlung 1 Sitz = 0,5 m Breite."],
+[S,"Wie breit muss ein Rettungsweg pro 200 darauf angewiesenen Personen mindestens sein?",["0,90 m","1,20 m","1,50 m","2,00 m"],1,"1,20 m je 200 Personen (Versammlungsstätten im Freien: je 600 Personen). Mindestbreite 1,20 m (bei ≤ 200 Personen 0,90 m für Rettungswege aus Räumen)."],
+[S,"Wie lang darf ein Rettungsweg von jeder Stelle eines Versammlungsraums maximal sein?",["20 m","30 m","50 m","100 m"],1,"Max. 30 m Lauflinie bis zum nächsten Ausgang (bei größerer Raumhöhe erweiterbar bis max. 60 m)."],
+[S,"Wie viele voneinander unabhängige Rettungswege muss ein Versammlungsraum haben?",["1","2","3","4"],1,"Mindestens zwei, möglichst entgegengesetzt."],
+[S,"Wie muss Dekorationsmaterial in Versammlungsstätten beschaffen sein?",["Egal","Mindestens schwerentflammbar (B1 nach DIN 4102 bzw. Klasse C nach EN 13501)","Nur aus Metall","Normalentflammbar reicht"],1,"Nachweis durch Zertifikat oder Imprägnierung. Im Bühnenhaus Vorhänge schwerentflammbar; auf Szenenflächen mit Feuer besondere Auflagen."],
+[S,"Was regelt die DGUV Vorschrift 17/18?",["Elektrische Anlagen","Veranstaltungs- und Produktionsstätten für szenische Darstellung (Unfallverhütung)","Lärm","Jugendschutz"],1,"Frühere BGV C1: Anforderungen an Bühnen, Arbeitsplätze, Aufbau, Proben, Vorstellungen."],
+[S,"Welche DGUV-Information ist der Leitfaden „Sicherheit bei Veranstaltungen und Produktionen“?",["DGUV I 215-313","DGUV I 208-016","DGUV V 3","DGUV R 100-001"],0,"215-313 – Praxishilfe für Gefährdungsbeurteilung, Aufbau, Verantwortlichkeiten."],
+[S,"Was ist die Grundlage aller Arbeitsschutzmaßnahmen nach § 5 ArbSchG?",["Die Betriebsanweisung","Die Gefährdungsbeurteilung","Das Sicherheitskonzept","Der Technical Rider"],1,"Gefährdungen ermitteln → bewerten → Maßnahmen festlegen → wirksam? → dokumentieren."],
+[S,"Welche Rangfolge haben Schutzmaßnahmen (STOP-Prinzip)?",["Persönlich – Organisatorisch – Technisch – Substitution","Substitution – Technisch – Organisatorisch – Persönlich","Technisch – Persönlich – Organisatorisch – Substitution","Organisatorisch – Technisch – Substitution – Persönlich"],1,"S-T-O-P: Gefahr vermeiden/ersetzen, dann technisch (Geländer), organisatorisch (Absperrung, Unterweisung), zuletzt PSA (Helm)."],
+[S,"Ab welcher Besucherzahl fordert die MVStättVO ein Sicherheitskonzept?",["1000","2000","5000","10000"],2,"Ab 5000 Besuchern (oder wenn die Art der Veranstaltung es erfordert) – abgestimmt mit Feuerwehr, Polizei, Sanitätsdienst."],
+[S,"Wie viele Ordner sind laut MVStättVO ab 5000 Besuchern vorzusehen?",["Keine Vorgabe","Nach Sicherheitskonzept, meist als Ordnungsdienst mit Leitung","1 pro 10 Besucher","Nur Polizei"],1,"Der Ordnungsdienst wird im Sicherheitskonzept festgelegt; der Betreiber benennt eine Ordnungsdienstleitung."],
+[S,"Wer ist während der Veranstaltung für die Sicherheit in der Versammlungsstätte verantwortlich?",["Nur die Feuerwehr","Der Betreiber – er kann Pflichten auf den Veranstalter/Veranstaltungsleiter übertragen","Die Band","Der Lichttechniker"],1,"Betreiber (§ 38 MVStättVO) und ggf. Veranstaltungsleiter; Verantwortliche für Veranstaltungstechnik für die technischen Einrichtungen."],
+[S,"Ab welcher Szenenflächengröße müssen Verantwortliche für Veranstaltungstechnik anwesend sein?",["20 m²","50 m²","Über 200 m² (bzw. Mehrzweckhallen > 5000 Besucher)","Immer"],2,"§ 40 MVStättVO. Bei Szenenflächen bis 200 m² dürfen auch Fachkräfte mit mind. 3 Jahren Berufserfahrung die Aufsicht übernehmen (§ 39/40)."],
+[S,"Was darf eine Fachkraft für Veranstaltungstechnik mit 3 Jahren Berufserfahrung laut MVStättVO?",["Nichts zusätzlich","Aufgaben der Verantwortlichen bei Szenenflächen bis 200 m² übernehmen","Alle Aufgaben des Meisters","Als Statiker arbeiten"],1,"Das ist der Grund, warum die Berufserfahrung nach der Ausbildung wertvoll ist."],
+[S,"Welche Verkehrslast muss eine Szenenfläche (Bühne) mindestens tragen?",["1,0 kN/m²","2,0 kN/m²","5,0 kN/m²","10 kN/m²"],2,"5,0 kN/m² = 500 kg/m² für Szenenflächen und Zuschauertribünen."],
+[S,"Welche Brandklasse hat ein Brand fester Stoffe (Holz, Papier, Textil)?",["A","B","C","D"],0,"A fest, B flüssig, C Gase, D Metalle, F Fette. Klassischer Schaumlöscher: A/B; CO₂: B (auch an Elektro)."],
+[S,"Welcher Feuerlöscher ist für Brände an elektronischen Geräten gut geeignet?",["Wasser","Pulver ABC","CO₂","Schaum"],2,"CO₂ hinterlässt keine Rückstände. Pulver macht Elektronik unbrauchbar."],
+[S,"Was ist zu tun, wenn jemand im Helfer-Team keinen Helm im Rigging-Bereich trägt?",["Ignorieren","Ansprechen und Helmpflicht durchsetzen – ohne PSA keine Arbeit unter hängenden Lasten","Meldung an die Polizei","Nach der Show erwähnen"],1,"Jeder hat das Recht und die Pflicht, unsichere Situationen zu stoppen."],
+[S,"Was ist bei Kabelwegen über Verkehrswege und Fluchtwege zu beachten?",["Nichts","Kabelbrücken/Abdeckungen verwenden, Fluchtwege dürfen nicht eingeengt oder zur Stolperfalle werden","Nur Klebeband","Kabel unter Teppich verstecken"],1,"Stolperunfälle sind die häufigsten Unfälle in der Branche."],
+[S,"Wie hoch darf eine Bühnenstufe (Treppe) maximal sein und wie tief mindestens?",["Steigung max. 19 cm, Auftritt min. 26 cm","Steigung max. 25 cm, Auftritt min. 20 cm","Steigung max. 15 cm, Auftritt min. 40 cm","Keine Vorgabe"],0,"Nach ASR A1.8 / DIN 18065; Bühnentreppen mit Handlauf ab bestimmten Höhen, Stufen rutschhemmend und beleuchtet."],
+[S,"Wann ist ein Sicherheitsgeländer an Podesten erforderlich?",["Ab 20 cm","Ab 1 m Höhe, außer an der Vorderkante der Spielfläche","Nie","Ab 2 m"],1,"Mind. 1,0 m hoch, mit Knie- und Fußleiste. Vorderkante bei Vorstellung ggf. durch Markierung/Unterweisung."],
+[S,"Was besagt das Arbeitszeitgesetz zur täglichen Höchstarbeitszeit?",["8 h, bis 10 h wenn Ausgleich in 6 Monaten/24 Wochen","12 h ohne Ausgleich","Keine Grenze","6 h"],0,"Ruhezeit 11 h zwischen Schichten; Pausen 30 min ab 6 h, 45 min ab 9 h."],
+[S,"Was gilt nach dem Jugendarbeitsschutzgesetz für unter 18-Jährige?",["Sie dürfen alles wie Erwachsene","Max. 8 h/Tag, 40 h/Woche, Nachtarbeit grundsätzlich verboten (Ausnahmen im Kulturbereich bis 23 Uhr)","Max. 12 h/Tag","Keine Regelung"],1,"Ruhezeit 12 h, keine gefährlichen Arbeiten ohne Aufsicht; Berufsschulzeit wird angerechnet."],
+[S,"Welche Erlaubnis braucht, wer Bühnenpyrotechnik der Kategorie T2 abbrennt?",["Keine","Befähigungsschein nach § 20 SprengG (oder Erlaubnis § 7)","Führerschein","Meisterbrief"],1,"T1 (geringes Risiko) ab 18 frei erwerbbar; T2 nur mit Befähigungsschein. Anzeige beim Ordnungsamt/Feuerwehr, Löschmittel bereitstellen."],
+[S,"Was ist beim Einsatz von Pyrotechnik in Innenräumen mindestens zu beachten?",["Nichts weiter","Sicherheitsabstände, Brandwache, Abstimmung mit Betreiber/Feuerwehr, Brandmeldeanlage, schwerentflammbare Umgebung","Nur Wasser bereithalten","Nur Ohrstöpsel"],1,"Zusätzlich Gefährdungsbeurteilung, Anzeige nach § 23 SprengG, Freigabe durch Betreiber."],
+[S,"Was ist ein Ersthelfer im Betrieb?",["Ein Arzt","Ein ausgebildeter Mitarbeiter (Erste-Hilfe-Kurs, Auffrischung alle 2 Jahre)","Der Betriebsrat","Der Chef"],1,"Ab 2 Beschäftigten ein Ersthelfer; ab 21 Beschäftigten 10 % (Verwaltung) bzw. 5 %."],
+[S,"Was zeigt ein grünes Rettungszeichen?",["Verbot","Gebot","Notausgang/Rettungsweg/Erste Hilfe","Gefahr"],2,"Rot = Verbot/Brandschutz, Blau = Gebot, Gelb = Warnung, Grün = Rettung (DIN EN ISO 7010)."],
+[S,"Wozu dient die Sicherheitsbeleuchtung?",["Zur Beleuchtung der Bühne","Um bei Netzausfall Rettungswege, Ausgänge und Stufen sichtbar zu halten","Als Arbeitslicht","Als Effekt"],1,"Über Batterie/Notstrom, muss in Versammlungsstätten vorhanden und geprüft sein; im Bühnenhaus mit Sicherheitsbeleuchtung im Arbeitsbereich."],
+[S,"Was ist ein Panikverschluss (Panikschloss)?",["Ein Alarmknopf","Türbeschlag, der Notausgänge in Fluchtrichtung ohne Schlüssel jederzeit öffnen lässt","Ein Vorhängeschloss","Ein Feuerlöscher"],1,"Notausgänge dürfen während der Veranstaltung nie verschlossen oder verstellt sein."],
+[S,"Was versteht man unter „Freigabe“ vor Vorstellungsbeginn?",["Der Kartenverkauf","Die Verantwortlichen prüfen, dass Bühne und technische Einrichtungen sicher sind, und geben die Vorstellung frei","Die Feuerwehr geht","Der Soundcheck"],1,"Dokumentierte Abnahme: Rettungswege frei, Aufbauten sicher, Notbeleuchtung ok, Brandschutz."],
+[S,"Was tun bei einem Unwetter-Warnhinweis während einer Open-Air-Veranstaltung?",["Weiterspielen","Nach dem Wetterkonzept handeln: Schwellenwerte, Ansagen, ggf. Unterbrechung/Räumung, Bühnenlasten sichern","Zuschauer nach Hause schicken ohne Plan","Nichts"],1,"Ein Wetter- und Räumungskonzept gehört zum Sicherheitskonzept bei Open Airs."],
+[S,"Was schreibt die Betriebssicherheitsverordnung (BetrSichV) vor?",["Preise","Sichere Bereitstellung und Benutzung von Arbeitsmitteln, Prüfungen, Unterweisung","Öffnungszeiten","Werbung"],1,"Gilt u. a. für Hebezeuge, Leitern, Hubarbeitsbühnen, Elektro."],
+[S,"Wie oft müssen Beschäftigte mindestens unterwiesen werden?",["Einmal bei Einstellung","Mindestens jährlich sowie bei neuen Tätigkeiten/Gefahren","Alle 5 Jahre","Nie"],1,"Nach ArbSchG § 12 und DGUV V1; Unterweisung dokumentieren. Jugendliche halbjährlich."],
+[S,"Welche Höhe muss ein Geländer an Zuschauertribünen mindestens haben?",["0,5 m","0,9 m","1,1 m","2 m"],2,"Umwehrungen 1,10 m; bei Absturzhöhe über 12 m: 1,20 m (MVStättVO/MBO)."],
+[S,"Was ist beim Umgang mit Leitern zu beachten?",["Anlegewinkel ca. 65–75°, Leiter gesichert, keine Arbeiten mit starkem seitlichem Zug, nur kurzzeitige Arbeiten","Beliebiger Winkel","Leiter auf Podest stellen","Zu zweit auf die Leiter"],0,"Ab 5 m Standhöhe Leitern nur ausnahmsweise; Hubarbeitsbühne oder Gerüst bevorzugen (TRBS 2121)."],
+[S,"Wer haftet, wenn ein Zuschauer durch einen umgestürzten Lautsprecherturm verletzt wird?",["Niemand","Je nach Verschulden Veranstalter/Betreiber und die verantwortlichen Techniker (zivil- und ggf. strafrechtlich)","Nur die Versicherung","Der Zuschauer"],1,"Deshalb: Dokumentation, Standsicherheit, Absperrung, Gefährdungsbeurteilung – auch zum eigenen Schutz."],
+[S,"Was bedeutet „Sicherheitsabstand“ bei Beschallungs- und Lichttürmen zum Publikum?",["Kein Abstand nötig","Absperrung mit ausreichendem Abstand (Umsturz- und Zugriffsschutz)","1 cm","Nur bei Regen"],1,"Türme (Delay-Türme, Verfolgertürme) im Publikum einzäunen und ggf. mit Ordnern besetzen."],
+
+/* ---------- BÜHNE & BÜHNENBAU ---------- */
+[B,"Welche Standardmaße hat ein Bühnenpodest?",["1 × 1 m","2 × 1 m","3 × 2 m","2,5 × 1,25 m"],1,"2 × 1 m (auch 1 × 1 und 2 × 0,5 m); Beinlängen 20–100 cm, Tragfähigkeit meist 500–750 kg/m²."],
+[B,"Was ist die „Bühnenrechts/Bühnenlinks“-Konvention?",["Aus Sicht des Publikums","Aus Sicht des Darstellers mit Blick ins Publikum","Vom Regisseur aus","Egal"],1,"Bühnenrechts = rechts vom Darsteller = links vom Zuschauer. Auf Tour oft Stage Left/Stage Right."],
+[B,"Was ist der Portalrahmen / das Proszenium?",["Der Bühnenboden","Die Öffnung zwischen Bühne und Zuschauerraum","Ein Vorhang","Die Hinterbühne"],1,"Bestehend aus Portalbrücke und Portaltürmen, oft mit Eisernem Vorhang."],
+[B,"Was ist der Eiserne Vorhang?",["Ein Metallvorhang für Effekte","Ein feuerhemmender Schutzvorhang, der Bühnenhaus und Zuschauerraum trennt","Ein Schallschutz","Ein Prospekt"],1,"Pflicht ab bestimmter Bühnengröße (Großbühne); muss täglich probeweise gefahren werden."],
+[B,"Was ist ein Prospekt in der Bühnentechnik?",["Ein Werbeflyer","Ein bemalter oder bedruckter Hintergrund-Bühnenbehang","Ein Scheinwerfer","Ein Podest"],1,"Prospekte hängen an Prospektzügen im Schnürboden; schwerentflammbar."],
+[B,"Was sind Gassen und Soffitten?",["Bühnenmöbel","Seitliche (Gassen) und obere (Soffitten) Abdeckungen, die die Seitenbühne/Beleuchtung verdecken","Podesttypen","Steckverbinder"],1,"Zusammen bilden sie das „Kastenkulisse“-System der klassischen Bühne."],
+[B,"Was ist ein Prospektzug / Schnürboden?",["Ein Lastenaufzug","Maschinenzüge oder Handkonterzüge, an denen Dekoration und Beleuchtung über der Bühne gehängt werden","Ein Bodenbelag","Ein Requisit"],1,"Handkonterzug: Last wird durch Gegengewichte im Kontergewichtswagen ausgeglichen – Zug niemals unausgeglichen lösen!"],
+[B,"Was muss bei Bühnenmolton beachtet werden?",["Nichts","Schwerentflammbar (B1), Zertifikat mitführen, Imprägnierung nach Wäsche erneuern","Nur schwarz","Nur im Freien"],1,"Verlangt der Betreiber oder die Feuerwehr, muss das B1-Zertifikat vorgezeigt werden."],
+[B,"Wozu dient ein Tanzboden (Tanzteppich)?",["Als Deko","Rutschhemmende, gelenkschonende Oberfläche für Tanz; nach Vorgabe (z. B. 1,5 m Bahnen) verlegt und verklebt","Als Kabelabdeckung","Als Schallschutz"],1,"Bahnen mit Tanzbodentape stoßfrei verkleben, Übergänge gegen Stolpern sichern."],
+[B,"Was ist ein Stagebox/Multicore?",["Ein Podest","Ein Anschlussfeld auf der Bühne, das viele Audioleitungen zum Pult führt (analog oder digital)","Ein Stromverteiler","Ein Rigging-Tool"],1,"Digital: Stagebox mit Cat/Glasfaser zum Pult; analog: dickes Multicore mit 24–48 Adernpaaren."],
+[B,"Wie werden Bühnenpodeste gegen Verrutschen und Kippen gesichert?",["Gar nicht","Mit Klammern/Verbindern zwischen den Podesten, Diagonalverstrebungen bei Höhe, Fußplatten auf weichem Boden","Mit Klebeband","Mit Gewichten"],1,"Ab ca. 1 m Höhe zusätzliche Aussteifung; Geländer an offenen Seiten."],
+[B,"Was ist ein Riser?",["Ein Aufzug","Ein erhöhtes Podest z. B. für Schlagzeug oder Chor","Ein Vorhang","Ein Kabeltyp"],1,"Drum-Riser häufig auf Rollen („Rolling Riser“) für schnelle Umbauten."],
+[B,"Was bedeutet „Backline“?",["Die letzte Reihe des Publikums","Die Instrumente und Verstärker der Band auf der Bühne (Amps, Drums, Keys)","Der hintere Vorhang","Die Kabelstrecke"],1,"Steht im Technical Rider – ob sie gestellt oder mitgebracht wird."],
+[B,"Was ist ein Traversenbogen / Roof (Bühnendach)?",["Deko","Eine überdachte Ground-Support-Konstruktion für Open-Air-Bühnen mit Windlastberechnung","Ein Lichteffekt","Eine Tribüne"],1,"Braucht Standsicherheitsnachweis (Prüfbuch) und Ballast; Aufbau nur nach Herstelleranleitung."],
+[B,"Wozu dient ein Fliegender Bau und was ist zu beachten?",["Fest installierte Bühne","Vorübergehend aufgestellte bauliche Anlage (Bühne, Tribüne, Zelt) – Ausführungsgenehmigung/Prüfbuch, Gebrauchsabnahme durch die Behörde","Ein Flugwerk für Darsteller","Ein Zelt ohne Regeln"],1,"Fliegende Bauten ab bestimmten Größen brauchen ein Prüfbuch (5 Jahre gültig) und Anzeige bei der Bauaufsicht."],
+
+/* ---------- VIDEO & MEDIENTECHNIK ---------- */
+[V,"Welche Auflösung hat Full HD?",["1280 × 720","1920 × 1080","2560 × 1440","3840 × 2160"],1,"HD 720p: 1280×720; Full HD 1080p: 1920×1080; UHD 4K: 3840×2160; DCI 4K: 4096×2160."],
+[V,"Welche Auflösung hat UHD (4K für Fernsehen/Consumer)?",["1920 × 1080","3840 × 2160","4096 × 2160","7680 × 4320"],1,"UHD 3840×2160 (16:9), DCI 4K 4096×2160 (Kino). 8K = 7680×4320."],
+[V,"Welche Auflösung hat WUXGA?",["1280 × 800","1920 × 1200","1600 × 1200","2560 × 1600"],1,"WUXGA 1920×1200 (16:10) – klassische Projektorauflösung im Konferenzbereich."],
+[V,"Wie berechnet man das Projektionsverhältnis (Throw Ratio)?",["Bildbreite ÷ Abstand","Abstand ÷ Bildbreite","Abstand × Bildbreite","Bildhöhe ÷ Bildbreite"],1,"Throw Ratio 1,5:1 → für 4 m Bildbreite 6 m Abstand. Kurzdistanz < 1, Weitwinkel ~0,8, Tele > 2."],
+[V,"Ein Beamer hat Throw Ratio 2,0. Wie weit muss er für 5 m Bildbreite stehen?",["2,5 m","5 m","10 m","20 m"],2,"Abstand = Ratio × Breite = 2,0 × 5 m = 10 m."],
+[V,"Was gibt „ANSI-Lumen“ an?",["Die Lampenleistung","Die genormte Lichtleistung eines Projektors (Mittel aus 9 Messpunkten)","Die Auflösung","Den Kontrast"],1,"Bühne mit viel Umgebungslicht: ab 10.000–20.000 lm; kleiner Konferenzraum: 3.000–5.000 lm."],
+[V,"Was ist der Nachteil einer Rückprojektion?",["Schlechteres Bild","Großer Platzbedarf hinter der Leinwand und möglicher Hot-Spot","Sie funktioniert nur im Dunkeln","Keine"],1,"Vorteil: Personen stehen nicht im Strahl, keine Schatten. Hot-Spot durch Spiegel oder Rückpro-Folie mit hoher Streuung mindern."],
+[V,"Welches Kabel/Protokoll nutzt professionelle Videotechnik über BNC mit 75 Ω?",["HDMI","SDI (HD-SDI, 3G-SDI, 12G-SDI)","DVI","VGA"],1,"3G-SDI (1080p50/60), 12G-SDI (4K60). Reichweite je nach Kabel bis ca. 100 m, verriegelt, kein HDCP."],
+[V,"Wie weit kommt man mit einem normalen HDMI-Kabel praktisch zuverlässig?",["1 m","ca. 10–15 m","100 m","1 km"],1,"Für längere Strecken: HDBaseT über Cat (bis 100 m), aktive optische HDMI-Kabel oder SDI/Glasfaser."],
+[V,"Wofür steht HDBaseT?",["Ein HDMI-Stecker","Übertragung von HDMI, Ethernet, Steuerung (und Strom) über Cat-Kabel bis 100 m","Ein Codec","Ein Farbraum"],1,"Sender/Empfänger-Paar (Extender)."],
+[V,"Was ist der Pixelpitch einer LED-Wand?",["Die Helligkeit","Der Abstand von LED-Mitte zu LED-Mitte in mm","Die Größe eines Moduls","Der Betrachtungswinkel"],1,"Faustregel: minimaler Betrachtungsabstand in Metern ≈ Pixelpitch in mm (P3,9 → ab ca. 4 m gut)."],
+[V,"Eine LED-Wand aus P2,6-Cabinets (500 × 500 mm) ist 6 × 3 m groß. Wie viele Pixel breit ist sie ungefähr?",["ca. 1150","ca. 2300","ca. 3840","ca. 4600"],1,"6000 mm / 2,6 mm ≈ 2308 Pixel breit, 3000/2,6 ≈ 1154 hoch – Auflösung der Wand ≠ Auflösung des Zuspielers!"],
+[V,"Was macht die Trapezkorrektur (Keystone)?",["Vergrößert das Bild","Korrigiert elektronisch die Verzerrung bei schrägem Projektionswinkel – kostet Auflösung","Erhöht den Kontrast","Wechselt die Lampe"],1,"Besser: Lens Shift (optische Verschiebung) oder Projektor gerade aufstellen."],
+[V,"Was ist Edge Blending (Softedge)?",["Bildschärfe","Überlappende Projektion mehrerer Projektoren mit weichem Übergang zu einem großen Bild","Ein Rahmen","Ein Farbfilter"],1,"Braucht Überlappungszone, Warping und Helligkeitsanpassung im Medienserver/Projektor."],
+[V,"Was ist EDID?",["Ein Videocodec","Daten, mit denen ein Display der Quelle mitteilt, welche Auflösungen/Formate es unterstützt","Eine Netzwerkadresse","Ein Steckertyp"],1,"EDID-Probleme = „Kein Bild“ oder falsche Auflösung. EDID-Emulatoren/Manager helfen bei Splittern und Matrix."],
+[V,"Was ist HDCP?",["Ein Kabeltyp","Kopierschutz auf HDMI/DisplayPort – ohne HDCP-fähige Kette bleibt der Bildschirm schwarz (z. B. Netflix, Blu-ray)","Ein Farbraum","Ein Projektortyp"],1,"Professionelle Signalketten (SDI) übertragen kein HDCP – geschützte Inhalte bleiben schwarz."],
+[V,"Was bedeutet 1080p50 vs. 1080i50?",["Gleich","p = progressiv (Vollbilder), i = interlaced (Halbbilder)","p = PAL, i = international","p = Projektor, i = Internet"],1,"Progressiv ist für Grafiken/LED-Wände zu bevorzugen; interlaced stammt aus dem Fernsehen."],
+[V,"Wozu dient Genlock/Sync in der Video-Regie?",["Zur Lautstärke","Alle Quellen laufen synchron im gleichen Bildtakt – störungsfreie Umschaltungen im Mischer","Zum Aufladen","Zum Streaming"],1,"Ohne Sync arbeitet der Mischer mit Frame-Sync (etwas Latenz) oder springt beim Schnitt."],
+[V,"Was bedeuten Program und Preview an einem Videomischer?",["Zwei Kameras","Program = das Signal, das ausgegeben wird; Preview = das vorbereitete nächste Bild","Ein/Aus","Links/Rechts"],1,"Übergänge: Cut, Mix/Dissolve, Wipe. Keyer für Bauchbinden (Lower Thirds)."],
+[V,"Welche Farbe wird für Chroma Keying am häufigsten genutzt und warum?",["Rot – wegen der Hautfarbe","Grün – kommt in Hauttönen kaum vor und Kamerasensoren sind dafür empfindlich","Blau – wegen des Himmels","Weiß"],1,"Blau alternativ (z. B. bei grüner Kleidung). Gleichmäßig ausleuchten, Abstand zum Hintergrund."],
+[V,"Was ist der Gain-Faktor einer Leinwand?",["Die Größe","Wie stark die Leinwand Licht zur Mitte reflektiert (1,0 = neutral, > 1 heller aber engerer Blickwinkel)","Die Farbe","Die Lampenstärke"],1,"Hoher Gain für helle Räume und frontale Sicht, geringer Gain für breite Zuschauerräume."],
+[V,"Wie hoch sollte die Bildunterkante einer Leinwand bei bestuhlten Räumen mindestens liegen?",["0,5 m","ca. 1,2 m über dem Boden","2,5 m","Egal"],1,"Sonst verdecken die vorderen Reihen das Bild; bei Kinobestuhlung/ansteigend weniger kritisch."],
+[V,"Welcher Farbraum ist für HD-Fernsehen genormt?",["sRGB","Rec. 709","Rec. 2020","DCI-P3"],1,"Rec. 709 (HD), Rec. 2020 (UHD/HDR), DCI-P3 (Kino)."],
+[V,"Was ist ein Scaler?",["Eine Waage","Ein Gerät, das Videosignale auf eine gewünschte Auflösung/Bildrate umrechnet","Ein Kabeltester","Ein Mikrofon"],1,"Meist im Presentation Switcher/LED-Prozessor integriert; wichtig bei gemischten Quellen (Laptops!)."],
+[V,"Welcher Codec wird für Livestreams am häufigsten genutzt?",["MP3","H.264 (AVC), zunehmend H.265/AV1","JPEG","WAV"],1,"Streaming über RTMP/SRT zu YouTube & Co.; Bitrate für 1080p ca. 4–8 Mbit/s."],
+[V,"Was ist SRT im Streaming?",["Ein Untertitelformat nur","Secure Reliable Transport – Protokoll für stabile Übertragung über unsichere Netze mit Fehlerkorrektur","Ein Kabel","Ein Projektor"],1,"Alternative zu RTMP mit Verschlüsselung und niedriger Latenz."],
+[V,"Was bewirkt eine kleinere Blendenzahl (z. B. f/2) an einer Kamera?",["Weniger Licht, große Schärfentiefe","Mehr Licht, geringe Schärfentiefe","Kein Unterschied","Nur Zoom"],1,"Offene Blende = hell und weicher Hintergrund; geschlossene Blende (f/8) = mehr Schärfentiefe, weniger Licht."],
+[V,"Was ist bei der Kamera-Weißabgleich einzustellen, wenn die Bühne mit 3200-K-Halogen beleuchtet ist?",["5600 K","3200 K","6500 K","Egal"],1,"Weißabgleich an die Lichtfarbe anpassen, sonst Farbstich (orange bei 5600-K-Einstellung)."],
+[V,"Was ist eine PTZ-Kamera?",["Eine Filmkamera","Fernsteuerbare Kamera mit Pan, Tilt, Zoom – z. B. für Streaming ohne Kameramann","Eine Wärmebildkamera","Eine 360°-Kamera"],1,"Steuerung per Joystick-Panel, VISCA over IP oder NDI."],
+[V,"Was ist NDI?",["Ein Steckverbinder","Video-over-IP-Protokoll (NewTek) mit geringer Latenz über Netzwerk","Ein Dimmer","Eine Norm für Leinwände"],1,"Braucht gute Netzwerkbandbreite (NDI HX komprimiert stärker)."],
+[V,"Welches Seitenverhältnis hat ein 16:9-Bild von 4 m Breite – wie hoch ist es?",["2,00 m","2,25 m","3,00 m","1,80 m"],1,"4 m ÷ 16 × 9 = 2,25 m."],
+[V,"Was ist ein Medienserver?",["Ein Streaming-Anbieter","Ein Rechner/System zum Abspielen, Mappen und Steuern von Videoinhalten (z. B. per DMX/Timecode)","Eine Festplatte","Ein Beamer"],1,"Funktionen: Warping, Blending, Mapping, Timeline, Timecode (SMPTE/LTC)."],
+[V,"Was ist Timecode (LTC/MTC) in der Show?",["Uhrzeit","Ein Zeitsignal, mit dem Licht, Video, Ton und Pyro synchron laufen","Ein Kabel","Ein Ticketsystem"],1,"SMPTE-Timecode als Audiosignal (LTC) oder MIDI (MTC); Format hh:mm:ss:ff."],
+[V,"Was ist ein Presentation Switcher?",["Ein Lichtpult","Ein Umschalter/Scaler für mehrere Laptop-/Videoquellen mit nahtlosem Wechsel","Ein Streamingdienst","Ein Mikrofon"],1,"Seamless Switching, PiP, Multiview – Standard bei Konferenzen."],
+
+/* ---------- PLANUNG & ORGANISATION ---------- */
+[P,"Was ist ein Technical Rider?",["Der Fahrer der Band","Das technische Anforderungsdokument einer Produktion (Ton, Licht, Bühne, Strom, Personal)","Der Vertrag","Der Ablaufplan"],1,"Enthält Stageplan, Inputliste, Backline, Monitorwünsche, Hospitality im Extra-Rider."],
+[P,"Was steht in einer Inputliste?",["Die Songs","Alle Mikrofon-/DI-Kanäle mit Quelle, Mikrofontyp, Stativ und Phantomspeisung","Die Lichtstimmungen","Die Fahrzeuge"],1,"Grundlage für Verkabelung und Pultvorbereitung."],
+[P,"Was ist ein Stageplan (Bühnenplan)?",["Eine Landkarte","Skizze der Bühnenaufstellung mit Positionen von Musikern, Backline, Monitoren, Stromanschlüssen","Der Sitzplan","Die Kostenrechnung"],1,"Wird aus Sicht der Bühne (Blick ins Publikum) gezeichnet."],
+[P,"In welcher Reihenfolge läuft ein typischer Konzerttag?",["Show – Get-in – Soundcheck","Get-in/Load-in – Aufbau – Line-Check – Soundcheck – Doors – Show – Load-out","Doors – Aufbau – Show","Soundcheck – Get-in – Doors"],1,"Zeiten stehen im Ablaufplan (Running Order / Timetable)."],
+[P,"Wann muss die Gefährdungsbeurteilung für eine Veranstaltung erstellt sein?",["Nach der Show","Vor Beginn der Arbeiten (Aufbau), laufend angepasst","Nur bei Unfällen","Vom Publikum"],1,"Sie ist Grundlage für Sicherheitsmaßnahmen, Einweisung der Helfer und Freigabe."],
+[P,"Was ist ein Rigging-Plot / Hängeplan?",["Ein Kabelplan","Zeichnung aller Hängepunkte mit Lasten, Traversen, Motoren und Höhen – wird mit dem Betreiber/Statiker abgestimmt","Die Stromverteilung","Der Sitzplan"],1,"Enthält Punktlasten zur Prüfung gegen den Hängepunktplan der Halle."],
+[P,"Was gehört in eine Ortsbesichtigung (Site Visit) vor einer Veranstaltung?",["Nur Fotos","Maße, Zugänge/Laderampe, Strom, Hängepunkte, Deckenhöhe, Aufzüge, Fluchtwege, Parken, Ansprechpartner","Nur der Bühnenplatz","Nichts"],1,"Ergebnisse fließen in Angebot, Planung und Gefährdungsbeurteilung ein."],
+[P,"Wozu dient eine Packliste?",["Für den Zoll","Damit alles Material vollständig eingepackt, transportiert und zurückgezählt wird","Für die Steuer","Als Einladung"],1,"Case-Beschriftung, Nummerierung, Kabellisten; nach dem Job Abgleich auf Fehlstände/Defekte."],
+[P,"Wie wird ein Angebot in der Veranstaltungstechnik in der Regel kalkuliert?",["Nur Materialmiete","Materialmiete + Personal (Stunden/Tagessätze) + Transport + Nebenkosten + Gemeinkosten + Gewinn, ggf. Rabatt/Skonto","Pauschal 1000 €","Nach Gefühl"],1,"Verbrauchsmaterial (Tape, Gels), Spesen, Übernachtung und Zuschläge (Nacht/Sonntag) nicht vergessen."],
+[P,"Was ist der Unterschied zwischen Angebot und Auftragsbestätigung?",["Keiner","Angebot = Vorschlag des Anbieters; Auftragsbestätigung = Bestätigung des erteilten Auftrags, damit Vertrag zustande","Angebot ist immer bindend für 1 Jahr","Auftragsbestätigung ist unverbindlich"],1,"Angebot + Annahme = Vertrag (§ 145 ff. BGB). Klausel „freibleibend“ macht das Angebot unverbindlich."],
+[P,"Was bedeutet „Skonto“?",["Ein Aufschlag","Preisnachlass bei Zahlung innerhalb einer kurzen Frist (z. B. 2 % bei 10 Tagen)","Mehrwertsteuer","Rabatt für Stammkunden"],1,"Für den Zahlenden fast immer lohnend – entspricht hohem Jahreszins."],
+[P,"Ein Angebot nennt 5.000 € netto. Wie hoch ist der Bruttobetrag bei 19 % MwSt.?",["5.190 €","5.500 €","5.950 €","6.000 €"],2,"5.000 × 1,19 = 5.950 €."],
+[P,"Was ist ein Deckungsbeitrag?",["Der Umsatz","Erlös minus variable Kosten – der Betrag, der zur Deckung der Fixkosten beiträgt","Gewinn nach Steuern","Die Miete"],1,"Deckungsbeitrag > Fixkosten → Gewinn."],
+[P,"Was bedeutet „Get-in“?",["Beginn des Einlasses","Zeitpunkt, an dem Crew und Material Zugang zur Location haben (Ladebeginn)","Beginn der Show","Abbau"],1,"„Doors“ ist der Einlass fürs Publikum."],
+[P,"Wer ist Ansprechpartner für die Hallentechnik vor Ort?",["Der Caterer","Der Hausmeister/Haustechniker bzw. der Betreiber","Die Band","Die Polizei"],1,"Vor Ort abstimmen: Strom, Hängepunkte, Brandmeldeanlage, Sicherheitsbeleuchtung, Hausordnung."],
+[P,"Was sollte ein Ablaufplan (Running Order) mindestens enthalten?",["Nur die Showzeit","Zeiten für Aufbau, Proben/Checks, Einlass, Programmpunkte, Umbauten, Ende, Abbau – mit Verantwortlichen","Die Preise","Die Getränke"],1,"Intercom-Absprachen und Cue-Sheets ergänzen den Ablauf für die Technik."],
+[P,"Was ist ein Cue-Sheet?",["Rechnung","Liste aller Einsätze (Cues) mit Nummer, Auslöser, Beschreibung – für Licht, Ton, Video","Sitzplan","Speisekarte"],1,"Stage Manager/Inspizient ruft die Cues per Intercom („Stand-by Cue 12 … Go“)."],
+[P,"Wozu dient die Nachbereitung einer Veranstaltung?",["Ist unnötig","Material zurückzählen, Defekte melden, Stunden erfassen, Rechnung stellen, Feedback und Lessons Learned","Nur Party","Nur Aufräumen"],1,"Dokumentation ist auch bei Reklamationen und Versicherungsfällen wichtig."],
+[P,"Was ist die GEMA?",["Eine Versicherung","Verwertungsgesellschaft für Musikrechte – Veranstalter zahlen für öffentliche Musiknutzung","Ein Gewerbeamt","Eine Behörde für Lärm"],1,"Anmeldung vor der Veranstaltung durch den Veranstalter."],
+[P,"Was ist die Künstlersozialkasse (KSK)?",["Eine Bank","Sozialversicherung für selbstständige Künstler/Publizisten; Unternehmen zahlen Abgabe auf Honorare","Eine Gewerkschaft","Ein Ticketanbieter"],1,"Auch Veranstaltungsfirmen können abgabepflichtig sein, wenn sie regelmäßig Künstler beauftragen."],
+[P,"Welche Versicherung ist für ein Veranstaltungsunternehmen zentral?",["Hausratversicherung","Betriebshaftpflicht (Veranstalterhaftpflicht) sowie Elektronik-/Equipmentversicherung","Reiseversicherung","Keine"],1,"Haftpflicht deckt Personen-/Sachschäden gegenüber Dritten; Equipment gegen Diebstahl/Transport."],
+[P,"Was sind Stagehands?",["Bühnenbauer mit Meisterbrief","Angelernte Helfer für Laden, Tragen, Aufbau unter Anleitung","Musiker","Sicherheitsdienst"],1,"Sie brauchen Unterweisung, PSA (Handschuhe, Schuhe, Helm) und klare Anweisungen."],
+[P,"Was ist ein Gantt-Diagramm?",["Ein Lichtplan","Ein Balkendiagramm zur Zeitplanung von Projektphasen","Ein Frequenzplan","Eine Kostentabelle"],1,"Zeigt Abhängigkeiten und den kritischen Pfad."],
+[P,"Welche Unterlagen sollten am Veranstaltungstag greifbar sein?",["Keine","Gefährdungsbeurteilung, Ablaufplan, Kontaktliste, B1-Zertifikate, Prüfbücher/Prüfnachweise, Sicherheitskonzept, Genehmigungen","Nur der Vertrag","Nur der Rider"],1,"Behörden und Feuerwehr können diese bei der Abnahme verlangen."],
+[P,"Was bedeutet „Doors“ im Ablaufplan?",["Türen schließen","Einlass des Publikums","Ende der Show","Abbau"],1,"Vor „Doors“ muss die Freigabe der Verantwortlichen erfolgt sein."],
+[P,"Was ist bei der Zusammenarbeit mit Fremdfirmen und Subunternehmern arbeitsschutzrechtlich zu beachten?",["Nichts","Koordination der Arbeiten und gegenseitige Information über Gefahren (§ 8 ArbSchG), ggf. Koordinator benennen","Nur Vertrag","Nur Rechnungen"],1,"Bei parallelem Aufbau mehrerer Gewerke Kollisionen (z. B. unter hängenden Lasten) vermeiden."],
+[P,"Was gehört in eine Kontaktliste für die Veranstaltung?",["Nur Handy des Chefs","Verantwortliche aller Gewerke, Betreiber, Veranstaltungsleiter, Sanitätsdienst, Ordnungsdienst, Notrufe","Nur die Band","Nur der Caterer"],1,"Kanäle festlegen: Funk, Intercom, Telefon."],
+
+/* ---------- WIRTSCHAFT & SOZIALKUNDE ---------- */
+[W,"Wie lang darf die Probezeit im Ausbildungsverhältnis sein?",["1 Woche","1 bis 4 Monate","6 Monate","Keine Probezeit"],1,"§ 20 BBiG: mindestens 1, höchstens 4 Monate. In der Probezeit beidseitig fristlos kündbar."],
+[W,"Welches Gesetz regelt die duale Berufsausbildung?",["ArbZG","BBiG (Berufsbildungsgesetz)","BGB","HGB"],1,"BBiG plus Ausbildungsordnung (betrieblich) und Rahmenlehrplan (Berufsschule)."],
+[W,"Wer kann nach der Probezeit den Ausbildungsvertrag mit 4 Wochen Frist kündigen?",["Nur der Betrieb","Nur der Auszubildende (bei Berufsaufgabe oder Wechsel des Berufs)","Beide jederzeit","Niemand"],1,"Der Betrieb kann nach der Probezeit nur aus wichtigem Grund fristlos kündigen (§ 22 BBiG)."],
+[W,"Ab wie vielen wahlberechtigten Arbeitnehmern kann ein Betriebsrat gewählt werden?",["3","5","10","20"],1,"Ab 5 ständigen wahlberechtigten Arbeitnehmern (BetrVG). JAV ab 5 Jugendlichen/Azubis unter 25."],
+[W,"Welche fünf Zweige hat die gesetzliche Sozialversicherung?",["Kranken-, Renten-, Arbeitslosen-, Pflege-, Unfallversicherung","Kranken-, Renten-, Haftpflicht-, Hausrat-, Lebensversicherung","Renten-, Kfz-, Unfall-, Pflege-, Reiseversicherung","Nur Kranken- und Rentenversicherung"],0,"Die Unfallversicherung (Berufsgenossenschaft) zahlt allein der Arbeitgeber."],
+[W,"Welche Berufsgenossenschaft ist für die Veranstaltungstechnik zuständig?",["BG Bau","VBG (Verwaltungs-Berufsgenossenschaft)","BGHM","BG ETEM"],1,"Die VBG betreut Bühnen, Studios, Veranstaltungsunternehmen und gibt die DGUV-Regeln der Branche heraus."],
+[W,"Ab wann gilt das Kündigungsschutzgesetz?",["Sofort","Betriebe mit mehr als 10 Arbeitnehmern und nach 6 Monaten Betriebszugehörigkeit","Nur im öffentlichen Dienst","Nie"],1,"Kündigung muss dann sozial gerechtfertigt sein (personen-, verhaltens- oder betriebsbedingt)."],
+[W,"Wie viel gesetzlicher Mindesturlaub steht Arbeitnehmern zu?",["20 Werktage bei 6-Tage-Woche","24 Werktage bei 6-Tage-Woche (entspricht 20 Arbeitstagen bei 5-Tage-Woche)","30 Tage","14 Tage"],1,"Jugendliche: 30/27/25 Werktage je nach Alter (unter 16/17/18)."],
+[W,"Wie hoch ist der gesetzliche Mindestlohn seit 1. Januar 2026?",["12,41 €","12,82 €","13,90 €","15,00 €"],2,"13,90 € (2026), 14,60 € ab 2027. Für Auszubildende gilt stattdessen die Mindestausbildungsvergütung."],
+[W,"Welches Stammkapital ist für eine GmbH mindestens erforderlich?",["1 €","10.000 €","25.000 €","50.000 €"],2,"GmbH 25.000 € (mind. 12.500 € bei Gründung eingezahlt); UG (haftungsbeschränkt) ab 1 €; AG 50.000 €."],
+[W,"Was ist der Unterschied zwischen einfachem und qualifiziertem Arbeitszeugnis?",["Keiner","Einfach: Art und Dauer der Tätigkeit; qualifiziert: zusätzlich Leistung und Verhalten","Qualifiziert ist nur für Meister","Einfach ist mündlich"],1,"Anspruch auf ein qualifiziertes Zeugnis besteht auf Verlangen (§ 109 GewO)."],
+[W,"Was bedeutet Tarifautonomie?",["Der Staat legt Löhne fest","Gewerkschaften und Arbeitgeberverbände handeln Tarifverträge ohne staatlichen Eingriff aus","Jeder Betrieb entscheidet allein","Es gibt keine Tarife"],1,"Grundgesetz Art. 9 Abs. 3 (Koalitionsfreiheit). Zuständige Gewerkschaft der Branche: ver.di."],
+[W,"Welche Kosten werden vom Bruttolohn abgezogen?",["Nur Steuern","Lohnsteuer, ggf. Kirchensteuer, Solidaritätszuschlag sowie Arbeitnehmeranteile zur Sozialversicherung","Nur Sozialversicherung","Nichts"],1,"Der Arbeitgeber zahlt zusätzlich seinen Anteil zur Sozialversicherung (Arbeitgeberbrutto)."],
+[W,"Wann kommt ein Kaufvertrag zustande?",["Bei Lieferung","Durch zwei übereinstimmende Willenserklärungen (Antrag und Annahme)","Bei Bezahlung","Nur schriftlich"],1,"Verträge sind grundsätzlich formfrei; Ausnahmen z. B. Grundstückskauf (notariell)."],
+[W,"Was ist eine Mängelrüge?",["Ein Streit","Die Anzeige eines Mangels an den Verkäufer, um Gewährleistungsrechte (Nachbesserung, Ersatz, Minderung, Rücktritt) zu sichern","Eine Kündigung","Eine Rechnung"],1,"Im Handel unter Kaufleuten unverzüglich prüfen und rügen (§ 377 HGB)."],
+[W,"Ab welchem Alter ist man voll geschäftsfähig?",["14","16","18","21"],2,"7–17 beschränkt geschäftsfähig (Taschengeldparagraph § 110 BGB), unter 7 geschäftsunfähig."],
+[W,"Was ist das ökonomische Prinzip?",["Möglichst viel ausgeben","Mit gegebenen Mitteln maximalen Erfolg (Maximalprinzip) bzw. ein Ziel mit minimalem Aufwand (Minimalprinzip) erreichen","Immer sparen","Nur Gewinn"],1,"Grundlage jeder Kalkulation."],
+[W,"Was passiert bei Inflation mit dem Geld?",["Es wird mehr wert","Die Kaufkraft sinkt, Preise steigen","Nichts","Die Zinsen fallen automatisch"],1,"Die EZB steuert mit dem Leitzins; Ziel ca. 2 % Inflation."],
+[W,"Welche Rechtsform haftet unbeschränkt mit dem Privatvermögen?",["GmbH","UG","Einzelunternehmen / GbR","AG"],2,"Einzelkaufmann (e. K.), GbR, OHG haften persönlich; GmbH/UG/AG nur mit Gesellschaftsvermögen."],
+[W,"Was regelt der Ausbildungsrahmenplan?",["Den Berufsschulunterricht","Die sachliche und zeitliche Gliederung der betrieblichen Ausbildung","Den Lohn","Die Prüfungsgebühr"],1,"Der Rahmenlehrplan der KMK regelt die Berufsschule (Lernfelder)."],
+[W,"Wie viele Lernfelder umfasst der Rahmenlehrplan Fachkraft für Veranstaltungstechnik (2016)?",["6","9","12","15"],2,"12 Lernfelder über 3 Jahre – von „Betrieb und Beruf“ bis „Veranstaltungen im Team durchführen“."],
+[W,"Wer nimmt die Abschlussprüfung ab?",["Der Ausbildungsbetrieb","Der Prüfungsausschuss der zuständigen Stelle (IHK)","Die Berufsschule allein","Der Betriebsrat"],1,"Der Ausschuss besteht aus Arbeitgeber-, Arbeitnehmervertretern und Lehrkraft."],
+[W,"Welche Pflicht hat der Ausbildungsbetrieb bezüglich der Berufsschule?",["Keine","Freistellung für den Unterricht und Prüfungen; Berufsschulzeit zählt als Arbeitszeit","Nur bei Volljährigkeit","Nur nach Absprache"],1,"Nach einem Berufsschultag ab 5 Unterrichtsstunden (à 45 min) keine Rückkehr in den Betrieb nötig (§ 15 BBiG)."],
+[W,"Was ist eine Abmahnung?",["Eine Kündigung","Eine formelle Rüge eines Pflichtverstoßes mit Androhung arbeitsrechtlicher Folgen im Wiederholungsfall","Eine Gehaltskürzung","Eine Lobrede"],1,"Meist Voraussetzung für eine verhaltensbedingte Kündigung."],
+[W,"Wie lange muss ein Arbeitgeber Lohnfortzahlung im Krankheitsfall leisten?",["2 Wochen","6 Wochen","3 Monate","Unbegrenzt"],1,"Danach Krankengeld der Krankenkasse (ca. 70 % brutto, max. 90 % netto) bis 78 Wochen."],
+[W,"Was bedeutet Mitbestimmung des Betriebsrats?",["Er leitet den Betrieb","Er hat bei bestimmten Entscheidungen (z. B. Arbeitszeit, Urlaubsplanung, Einstellungen) Informations-, Anhörungs- oder Zustimmungsrechte","Er kann nur beraten","Er legt die Gehälter fest"],1,"Kündigungen ohne Anhörung des Betriebsrats sind unwirksam (§ 102 BetrVG)."],
+[W,"Welche Steuer wird auf fast alle Leistungen erhoben und vom Endverbraucher getragen?",["Einkommensteuer","Umsatzsteuer (Mehrwertsteuer), 19 % bzw. ermäßigt 7 %","Gewerbesteuer","Kirchensteuer"],1,"Unternehmen dürfen die Vorsteuer aus Eingangsrechnungen abziehen. Eintrittskarten für Theater/Konzerte: 7 %."],
+[W,"Was ist der Unterschied zwischen Werkvertrag und Dienstvertrag?",["Keiner","Werkvertrag: Erfolg geschuldet (z. B. funktionierende Bühne); Dienstvertrag: Tätigkeit geschuldet (z. B. Arbeitsleistung)","Werkvertrag nur für Handwerker","Dienstvertrag nur für Beamte"],1,"Wichtig für Techniker als Freelancer – Scheinselbstständigkeit vermeiden."],
+];
+
+/* ===================== KARTEIKARTEN ===================== */
+const CARDS=[
+[E,"Ohmsches Gesetz","U = R · I  |  I = U / R  |  R = U / I"],
+[E,"Elektrische Leistung","P = U · I (einphasig)  |  P = √3 · U · I · cos φ (Drehstrom)"],
+[E,"Leiterfarben","L1 braun · L2 schwarz · L3 grau · N blau · PE grün-gelb"],
+[E,"CEE-Farben","Blau 230 V · Rot 400 V · Gelb 110 V"],
+[E,"Querschnitte (Faustregel)","16 A → 2,5 mm² · 32 A → 6 mm² · 63 A → 16 mm² · 125 A → 35 mm²"],
+[E,"Leistung Drehstromanschlüsse","16 A ≈ 11 kVA · 32 A ≈ 22 kVA · 63 A ≈ 44 kVA · 125 A ≈ 87 kVA"],
+[E,"RCD","30 mA Personenschutz an Steckdosen bis 32 A; monatlich Prüftaste"],
+[E,"Fünf Sicherheitsregeln","1 Freischalten · 2 Gegen Wiedereinschalten sichern · 3 Spannungsfreiheit feststellen · 4 Erden und kurzschließen · 5 Benachbarte Teile abdecken"],
+[E,"Schutzklassen","I Schutzleiter · II schutzisoliert · III Schutzkleinspannung"],
+[E,"LS-Charakteristik","B 3–5×In · C 5–10×In · D 10–20×In"],
+[E,"Powerlock-Reihenfolge","Stecken: PE → N → L1 L2 L3   Trennen: umgekehrt"],
+[L,"DMX512","512 Kanäle · 0–255 · 5-pol XLR · 120 Ω Abschluss · max. 32 Geräte je Linie"],
+[L,"Lichttechnische Größen","Lichtstrom lm · Lichtstärke cd · Beleuchtungsstärke lx (lm/m²) · Leuchtdichte cd/m²"],
+[L,"Entfernungsgesetz","E = I / r²  – doppelter Abstand = ¼ Beleuchtungsstärke"],
+[L,"Farbtemperaturen","Kerze 1900 K · Halogen 3200 K · Tageslicht 5600 K · bedeckt 6500 K+"],
+[L,"Farbmischung","Additiv RGB (Licht) → Weiß · Subtraktiv CMY (Filter) → Schwarz"],
+[L,"Scheinwerfertypen","PAR (fest) · Fresnel (Stufenlinse, weich) · PC (glatt, härter) · Profil (Gobo, Blenden, Iris) · Fluter · Moving Head Spot/Wash/Beam"],
+[L,"PAR-64-Lampen","CP60 VNSP · CP61 NSP · CP62 MFL · CP95 WFL – Sockel GX16d"],
+[L,"HTP / LTP","HTP: höchster Wert gewinnt (Dimmer) · LTP: letzter Wert gewinnt (Attribute)"],
+[T,"Schallgeschwindigkeit","343 m/s → ca. 3 ms pro Meter · λ = c / f"],
+[T,"dB-Regeln","+3 dB doppelte Leistung · +6 dB doppelte Spannung/Schalldruck · +10 dB doppelt so laut · −6 dB je Abstandsverdopplung"],
+[T,"XLR-Belegung","1 Masse · 2 Hot (+) · 3 Cold (−)"],
+[T,"Phantomspeisung","48 V DC für Kondensatormikros und aktive DI-Boxen"],
+[T,"Richtcharakteristiken","Kugel · Niere (180° max. Dämpfung) · Superniere (~125°) · Hyperniere (~110°) · Acht"],
+[T,"Impedanz parallel","2 × 8 Ω = 4 Ω · 4 × 8 Ω = 2 Ω · Reihe addiert sich"],
+[T,"Kompressor","Threshold · Ratio · Attack · Release · Knee · Make-up Gain"],
+[T,"DIN 15905-5","99 dB(A) Leq 30 min · 135 dB(C) Peak · ab 95 dB(A) Gehörschutz anbieten"],
+[T,"Lärm am Arbeitsplatz","80 dB(A): Gehörschutz bereitstellen · 85 dB(A): Tragepflicht"],
+[T,"Digitalaudio","48 kHz Standard · Nyquist: fs ≥ 2 · fmax · 24 Bit ≈ 144 dB Dynamik · 0 dBFS = Vollaussteuerung"],
+[T,"Haas-Effekt","Ortung nach dem zuerst eintreffenden Schall (bis ~30 ms) – Basis für Delay-Lines"],
+[R,"Sicherheitsfaktoren","Rundschlingen 7:1 · Drahtseile 5:1 · Ketten 4:1 · Schäkel 4:1–6:1"],
+[R,"Rundschlingen-Farben","violett 1 t · grün 2 t · gelb 3 t · grau 4 t · rot 5 t · braun 6 t · blau 8 t · orange 10 t"],
+[R,"Anschlagarten","Gerade 100 % · Schnürgang 80 % · Umgelegt (Basket) 200 %"],
+[R,"Spreizwinkel","max. 120° · Neigungswinkel max. 60° zur Senkrechten"],
+[R,"Kettenzug-Klassen","D8: Sekundärsicherung nötig · D8 Plus: ruhende Lasten über Personen · C1: bewegte Lasten über Personen"],
+[R,"Traversenmaterial","Alu EN AW-6082 T6 · Conical-Verbinder mit Bolzen + Splint"],
+[R,"Absturzsicherung","ab 1 m Höhe · Geländer 1,0 m mit Knie-/Fußleiste · PSAgA + Rettungskonzept"],
+[S,"MVStättVO gilt ab","200 Besucher (Räume) · 1000 im Freien mit Szenenfläche · 5000 Sportstadien"],
+[S,"Rettungswege","1,20 m je 200 Personen (im Freien je 600) · max. 30 m · mind. 2 unabhängige Wege"],
+[S,"Besucherzahl","2 Personen/m² Stehplätze · 1 Person/m² Sitzplätze an Tischen"],
+[S,"Sicherheitskonzept","ab 5000 Besuchern · mit Feuerwehr, Polizei, Sanität · Ordnungsdienstleitung"],
+[S,"Verantwortliche für VT","Pflicht bei Szenenfläche > 200 m² · Fachkraft mit 3 J. Erfahrung bis 200 m²"],
+[S,"Brandschutzklassen","B1 schwerentflammbar (Deko-Pflicht) · B2 normal · B3 leicht · EN 13501: A1/A2 nicht brennbar, B, C, D…"],
+[S,"Brandklassen","A fest · B flüssig · C Gase · D Metalle · F Speisefette"],
+[S,"STOP-Prinzip","Substitution → Technisch → Organisatorisch → Persönlich (PSA)"],
+[S,"Verkehrslast Bühne","5,0 kN/m² = 500 kg/m² für Szenenflächen und Tribünen"],
+[S,"Pyrotechnik","T1 frei ab 18 · T2 nur mit Befähigungsschein § 20 SprengG · Anzeige § 23"],
+[S,"Arbeitszeit","8 h (max. 10 h) · Ruhezeit 11 h · Pause 30 min ab 6 h, 45 min ab 9 h · Jugendliche 8 h/40 h, Ruhezeit 12 h"],
+[S,"Wichtige Regelwerke","MVStättVO · DGUV V 17/18 · DGUV I 215-313 · DGUV V 3 · DGUV V 54 (Winden/Hebezeuge) · ArbSchG · BetrSichV · DIN 15905-5"],
+[V,"Auflösungen","HD 1280×720 · FHD 1920×1080 · WUXGA 1920×1200 · UHD 3840×2160 · DCI 4K 4096×2160"],
+[V,"Throw Ratio","Abstand ÷ Bildbreite · Abstand = Ratio × Breite"],
+[V,"16:9-Höhe","Höhe = Breite ÷ 16 × 9 (4 m → 2,25 m)"],
+[V,"SDI","BNC 75 Ω · 3G-SDI 1080p60 · 12G-SDI 4K60 · bis ~100 m · kein HDCP"],
+[V,"HDMI-Reichweite","~10–15 m passiv · HDBaseT über Cat bis 100 m · Glasfaser weiter"],
+[V,"LED-Pixelpitch","Mindestabstand in m ≈ Pitch in mm · Wandauflösung = Maß ÷ Pitch"],
+[V,"Farbräume","Rec. 709 HD · Rec. 2020 UHD/HDR · DCI-P3 Kino"],
+[P,"Konzerttag","Get-in → Aufbau → Line-Check → Soundcheck → Doors → Show → Load-out"],
+[P,"Rider-Bestandteile","Technical Rider · Stageplan · Inputliste · Backline · Hospitality Rider"],
+[P,"Kalkulation","Material + Personal + Transport + Nebenkosten + Gemeinkosten + Gewinn → netto + 19 % USt"],
+[W,"Probezeit Ausbildung","1–4 Monate (§ 20 BBiG) · danach Betrieb nur fristlos aus wichtigem Grund"],
+[W,"Sozialversicherung","Kranken · Renten · Arbeitslosen · Pflege · Unfall (nur AG) – BG: VBG"],
+[W,"Betriebsrat / JAV","Betriebsrat ab 5 Arbeitnehmern · JAV ab 5 unter 18 bzw. Azubis unter 25"],
+[W,"Urlaub","24 Werktage (6-Tage-Woche) · Jugendliche 30/27/25"],
+[W,"Rechtsformen","e. K./GbR unbeschränkt · UG ab 1 € · GmbH 25.000 € · AG 50.000 €"],
+];
+
+/* ===================== APP-LOGIK ===================== */
+const CATS=[...new Set(Q.map(q=>q[0]))];
+let selected=new Set(CATS);
+let stats={}; CATS.forEach(c=>stats[c]={right:0,wrong:0});
+let wrongSet=new Set();   // Indizes falsch beantworteter Fragen
+let mode=null, queue=[], pos=0, score=0, answered=false, examLog=[], timerId=null, timeLeft=0;
+let cardIdx=0, cardFlipped=false, cardQueue=[];
+
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo(0,0);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function renderHome(){
+  $('poolInfo').textContent=Q.length+" Fragen · "+CARDS.length+" Karten";
+  $('nCards').textContent=CARDS.length;
+  $('nWeak').textContent=wrongSet.size;
+  const chips=$('chips'); chips.innerHTML='';
+  CATS.forEach(c=>{
+    const n=Q.filter(q=>q[0]===c).length;
+    const b=document.createElement('button');
+    b.className='chip'+(selected.has(c)?' on':'');
+    b.innerHTML=c+'<small>'+n+'</small>';
+    b.onclick=()=>{selected.has(c)?selected.delete(c):selected.add(c);renderHome();};
+    chips.appendChild(b);
+  });
+  $('nPractice').textContent=Q.filter(q=>selected.has(q[0])).length;
+  const sl=$('statList'); sl.innerHTML='';
+  CATS.forEach(c=>{
+    const s=stats[c], tot=s.right+s.wrong, pct=tot?Math.round(100*s.right/tot):0;
+    sl.innerHTML+=`<div class="statrow"><b>${c}</b><div class="bar"><i style="width:${pct}%"></i></div><span class="pct">${tot?pct+' %':'–'}</span></div>`;
+  });
+}
+function toggleAll(){selected = selected.size===CATS.length ? new Set() : new Set(CATS); renderHome();}
+function goHome(){clearInterval(timerId);renderHome();show('s-home');}
+
+function startPractice(){
+  const idx=Q.map((q,i)=>i).filter(i=>selected.has(Q[i][0]));
+  if(!idx.length){alert('Wähle mindestens einen Bereich aus.');return;}
+  mode='practice'; queue=shuffle(idx); pos=0; score=0; startQuiz();
+}
+function startWeak(){
+  if(!wrongSet.size){alert('Noch keine falschen Antworten – erst üben oder eine Prüfung machen.');return;}
+  mode='weak'; queue=shuffle([...wrongSet]); pos=0; score=0; startQuiz();
+}
+function startExam(){
+  mode='exam'; examLog=[];
+  // gleichmäßig über Bereiche verteilen
+  const per={}; CATS.forEach(c=>per[c]=shuffle(Q.map((q,i)=>i).filter(i=>Q[i][0]===c)));
+  queue=[]; let k=0;
+  while(queue.length<40){const c=CATS[k%CATS.length]; if(per[c].length) queue.push(per[c].pop()); k++;}
+  queue=shuffle(queue); pos=0; score=0; timeLeft=60*60;
+  clearInterval(timerId); timerId=setInterval(tick,1000); tick();
+  startQuiz();
+}
+function tick(){
+  const m=Math.floor(timeLeft/60), s=timeLeft%60;
+  const t=$('qTimer'); t.textContent=m+':'+String(s).padStart(2,'0'); t.classList.toggle('low',timeLeft<300);
+  if(timeLeft<=0){clearInterval(timerId);finishExam();return;}
+  timeLeft--;
+}
+function startQuiz(){ show('s-quiz'); $('qTimer').textContent = mode==='exam'?$('qTimer').textContent:''; renderQ(); }
+
+function renderQ(){
+  const q=Q[queue[pos]]; answered=false;
+  $('qCounter').innerHTML='Frage <b>'+(pos+1)+'</b>'+(mode==='practice'?'':' / '+queue.length);
+  $('qScore').textContent=mode==='exam'?'':score+' richtig';
+  $('fader').style.width=(mode==='practice'?((pos%20)/20*100):(pos/queue.length*100))+'%';
+  $('qCat').textContent=q[0]; $('qText').textContent=q[1];
+  const order=shuffle(q[2].map((a,i)=>i));
+  const box=$('qAnswers'); box.innerHTML='';
+  order.forEach(i=>{const b=document.createElement('button');b.className='ans';b.textContent=q[2][i];b.onclick=()=>answer(i,b);box.appendChild(b);});
+  $('qExpl').innerHTML=''; $('nextBtn').style.display='none';
+}
+function answer(i,btn){
+  if(answered)return; answered=true;
+  const q=Q[queue[pos]], ok=i===q[3];
+  document.querySelectorAll('.ans').forEach((b,n)=>{b.disabled=true;if(b.textContent===q[2][q[3]])b.classList.add('ok');});
+  if(!ok)btn.classList.add('bad');
+  if(ok){score++;stats[q[0]].right++; if(mode==='weak')wrongSet.delete(queue[pos]);}
+  else {stats[q[0]].wrong++; wrongSet.add(queue[pos]);}
+  if(mode==='exam'){examLog.push({q,ok,given:q[2][i]});}
+  $('qExpl').innerHTML=`<div class="expl ${ok?'ok':'bad'}"><b>${ok?'Richtig.':'Leider falsch.'}</b>${q[4]}</div>`;
+  $('nextBtn').style.display='block'; $('nextBtn').textContent=(mode!=='practice'&&pos===queue.length-1)?'Auswertung':'Weiter';
+}
+function nextQ(){
+  pos++;
+  if(mode==='practice'){ if(pos>=queue.length){queue=shuffle(queue);pos=0;} renderQ(); return; }
+  if(pos>=queue.length){ if(mode==='exam')finishExam(); else goHome(); return; }
+  renderQ();
+}
+function finishExam(){
+  clearInterval(timerId);
+  const n=queue.length, pct=Math.round(100*score/n);
+  $('rPct').textContent=pct+' %';
+  $('rDetail').textContent=score+' von '+n+' Fragen richtig';
+  let g='Note 6 – nicht bestanden'; if(pct>=92)g='Note 1 – sehr gut';else if(pct>=81)g='Note 2 – gut';else if(pct>=67)g='Note 3 – befriedigend';else if(pct>=50)g='Note 4 – ausreichend (bestanden)';else if(pct>=30)g='Note 5 – mangelhaft';
+  $('rGrade').textContent=g;
+  const wrong=examLog.filter(e=>!e.ok);
+  $('rReview').innerHTML=wrong.length?'<h3>Das solltest du dir nochmal ansehen</h3>'+wrong.map(e=>`<div class="rv"><div class="rq">${e.q[1]}</div><div class="ra">Deine Antwort: ${e.given}<br>Richtig: <b>${e.q[2][e.q[3]]}</b></div></div>`).join(''):'<h3>Alles richtig – stark.</h3>';
+  show('s-result');
+}
+
+/* Karteikarten */
+function startCards(){cardQueue=shuffle(CARDS.map((c,i)=>i));cardIdx=0;cardFlipped=false;show('s-cards');renderCard();}
+function renderCard(){
+  const c=CARDS[cardQueue[cardIdx]];
+  $('cCounter').textContent=(cardIdx+1)+' / '+CARDS.length; $('cCat').textContent=c[0];
+  $('card').innerHTML=cardFlipped?`<div class="def">${c[2]}</div><div class="hint">Tippen zum Umdrehen</div>`:`<div class="term">${c[1]}</div><div class="hint">Tippen für die Antwort</div>`;
+}
+function flipCard(){cardFlipped=!cardFlipped;renderCard();}
+function nextCard(){cardIdx=(cardIdx+1)%CARDS.length;cardFlipped=false;renderCard();}
+function prevCard(){cardIdx=(cardIdx-1+CARDS.length)%CARDS.length;cardFlipped=false;renderCard();}
+
+/* Lernstand export/import (kein Browserspeicher verfügbar) */
+function exportProgress(){
+  const code=btoa(unescape(encodeURIComponent(JSON.stringify({stats,wrong:[...wrongSet]}))));
+  prompt('Diesen Code kopieren und aufbewahren:',code);
+}
+function importProgress(){
+  const code=prompt('Lernstand-Code einfügen:'); if(!code)return;
+  try{const d=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+    CATS.forEach(c=>{if(d.stats[c])stats[c]=d.stats[c];}); wrongSet=new Set((d.wrong||[]).filter(i=>i<Q.length)); renderHome();
+  }catch(e){alert('Der Code konnte nicht gelesen werden.');}
+}
+renderHome();
+</script>
+</body>
+</html>
